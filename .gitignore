@@ -1,0 +1,7 @@
+# IDE: Goland
+.idea/
+
+# IDE: VS Code
+.vscode/
+
+.build/
