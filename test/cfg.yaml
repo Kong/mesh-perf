@@ -1,0 +1,7 @@
+helmChartName: kong-mesh/kong-mesh
+helmRepoUrl: https://kong.github.io/kong-mesh-charts
+helmChartPath: ""
+helmSubChartPrefix: kuma.
+imageRegistry: kong
+namespace: kong-mesh-system
+serviceName: kong-mesh-control-plane
