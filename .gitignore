@@ -4,4 +4,4 @@
 # IDE: VS Code
 .vscode/
 
-.build/
+build/
