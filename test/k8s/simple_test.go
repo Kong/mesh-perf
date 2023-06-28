@@ -2,6 +2,7 @@ package k8s_test
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"strconv"
@@ -19,14 +20,39 @@ import (
 
 func Simple() {
 	BeforeAll(func() {
+		opts := []KumaDeploymentOption{
+			WithInstallationMode(HelmInstallationMode),
+			WithHelmChartVersion(meshVersion),
+			WithHelmReleaseName(fmt.Sprintf("kuma-%s", strings.ToLower(random.UniqueId()))),
+			WithHelmChartPath(Config.HelmChartName), // we pass chart name to use production chart
+			WithoutHelmOpt("global.image.tag"),      // required to use production chart
+		}
+
+		if license := os.Getenv("KMESH_LICENSE_INLINE"); license != "" {
+			licenseEncoded := base64.StdEncoding.EncodeToString([]byte(license))
+			err := NewClusterSetup().
+				Install(Namespace(Config.KumaNamespace)).
+				Install(YamlK8s(fmt.Sprintf(`
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kong-mesh-license
+  namespace: %s
+type: Opaque
+data:
+  license.json: %s
+`, Config.KumaNamespace, licenseEncoded))).
+				Setup(cluster)
+			Expect(err).ToNot(HaveOccurred())
+			opts = append(opts,
+				WithHelmOpt("controlPlane.secrets[0].Env", "KMESH_LICENSE_INLINE"),
+				WithHelmOpt("controlPlane.secrets[0].Secret", "kong-mesh-license"),
+				WithHelmOpt("controlPlane.secrets[0].Key", "license.json"),
+			)
+		}
+
 		err := NewClusterSetup().
-			Install(Kuma(core.Standalone,
-				WithInstallationMode(HelmInstallationMode),
-				WithHelmChartVersion(meshVersion),
-				WithHelmReleaseName(fmt.Sprintf("kuma-%s", strings.ToLower(random.UniqueId()))),
-				WithHelmChartPath(Config.HelmChartName), // we pass chart name to use production chart
-				WithoutHelmOpt("global.image.tag"),      // required to use production chart
-			)).
+			Install(Kuma(core.Standalone, opts...)).
 			Install(NamespaceWithSidecarInjection(TestNamespace)).
 			Setup(cluster)
 		Expect(err).ToNot(HaveOccurred())
@@ -38,7 +64,7 @@ func Simple() {
 	})
 
 	It("should deploy graph", func() {
-		numServices := 5 // todo provide a license to spin up more
+		numServices := 5
 		if num := os.Getenv("TEST_NUM_SERVICES"); num != "" {
 			i, err := strconv.Atoi(num)
 			Expect(err).ToNot(HaveOccurred(), "invalid value of TEST_NUM_SERVICES")
@@ -64,13 +90,13 @@ func Simple() {
 			name := fmt.Sprintf("srv-%03d", i)
 			go func() {
 				defer GinkgoRecover()
+				defer wg.Done()
 				err := NewClusterSetup().
 					Install(WaitService(TestNamespace, name)).
 					Install(WaitNumPods(TestNamespace, 1, name)).
 					Install(WaitPodsAvailable(TestNamespace, name)).
 					Setup(cluster)
 				Expect(err).ToNot(HaveOccurred())
-				wg.Done()
 			}()
 		}
 		wg.Wait()

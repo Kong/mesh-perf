@@ -5,3 +5,4 @@ helmSubChartPrefix: kuma.
 imageRegistry: kong
 namespace: kong-mesh-system
 serviceName: kong-mesh-control-plane
+defaultClusterStartupRetries: 60 # bump this value because fetching containers may take more time than usual
