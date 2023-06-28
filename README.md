@@ -4,12 +4,22 @@ Performance tests of Kong Mesh.
 
 ## Run
 
-1. Clone https://github.com/kumahq/kuma repo. Run from the Kuma directory
+1. Install dependencies
 ```sh
-KIND_CLUSTER_NAME=kuma-1 make k3d/start
+make dev/tools
+```
+
+1. Create local cluster
+```sh
+ENV=local make start-cluster
 ```
 
 2. Run tests from mesh-perf directory
 ```sh
 make run
+```
+
+3. Destroy local cluster
+```sh
+ENV=local make destroy-cluster
 ```
