@@ -9,17 +9,17 @@ Performance tests of Kong Mesh.
 make dev/tools
 ```
 
-1. Create local cluster
+2. Create local cluster
 ```sh
 ENV=local make start-cluster
 ```
 
-2. Run tests from mesh-perf directory
+3. Run tests from mesh-perf directory
 ```sh
 make run
 ```
 
-3. Destroy local cluster
+4. Destroy local cluster
 ```sh
 ENV=local make destroy-cluster
 ```

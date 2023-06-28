@@ -22,7 +22,7 @@ var _ = BeforeSuite(func() {
 	if kubeConfigPath == "" {
 		kubeConfigPath = "${HOME}/.kube/config"
 	}
-	cluster = NewK8sCluster(NewTestingT(), "perf-test", true)
+	cluster = NewK8sCluster(NewTestingT(), "mesh-perf", true)
 
 	cluster.(*K8sCluster).WithKubeConfig(os.ExpandEnv(kubeConfigPath))
 	meshVersion := os.Getenv("MESH_VERSION")

@@ -3,7 +3,7 @@ provider "k3d" {}
 provider "docker" {}
 
 resource "docker_network" "network" {
-  name            = "perf-test"
+  name            = "mesh-perf"
   check_duplicate = "true"
   driver          = "bridge"
   options = {
@@ -12,8 +12,8 @@ resource "docker_network" "network" {
   internal = false
 }
 
-resource "k3d_cluster" "perf-test" {
-  name    = "perf-test"
+resource "k3d_cluster" "mesh-perf" {
+  name    = "mesh-perf"
   servers = 1
   agents  = 2
 
