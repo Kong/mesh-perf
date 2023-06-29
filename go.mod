@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/gruntwork-io/terratest v0.41.15
-	github.com/kumahq/kuma v0.0.0-20230627080352-58d63235ace9
+	github.com/kumahq/kuma v0.0.0-20230629065343-7a010105deb8
 	github.com/kumahq/kuma-tools v0.0.2
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.8
