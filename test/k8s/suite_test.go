@@ -18,7 +18,13 @@ var cluster Cluster
 var meshVersion string
 
 var _ = BeforeSuite(func() {
-	cluster = NewK8sCluster(NewTestingT(), Kuma1, true)
+	kubeConfigPath := os.Getenv("KUBECONFIG")
+	if kubeConfigPath == "" {
+		kubeConfigPath = "${HOME}/.kube/config"
+	}
+	cluster = NewK8sCluster(NewTestingT(), "mesh-perf", true)
+
+	cluster.(*K8sCluster).WithKubeConfig(os.ExpandEnv(kubeConfigPath))
 	meshVersion := os.Getenv("MESH_VERSION")
 	if meshVersion == "" {
 		panic("MESH_VERSION has to be defined")
