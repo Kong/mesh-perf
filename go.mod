@@ -3,11 +3,13 @@ module github.com/kong/mesh-perf
 go 1.20
 
 require (
+	github.com/go-errors/errors v1.4.2
 	github.com/gruntwork-io/terratest v0.41.15
 	github.com/kumahq/kuma v0.0.0-20230629065343-7a010105deb8
 	github.com/kumahq/kuma-tools v0.0.2
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.8
+	k8s.io/apimachinery v0.27.3
 )
 
 require (
@@ -28,7 +30,6 @@ require (
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
-	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-logr/zapr v1.2.4 // indirect
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
@@ -114,7 +115,6 @@ require (
 	gotest.tools/v3 v3.4.0 // indirect
 	k8s.io/api v0.27.3 // indirect
 	k8s.io/apiextensions-apiserver v0.27.3 // indirect
-	k8s.io/apimachinery v0.27.3 // indirect
 	k8s.io/client-go v0.27.3 // indirect
 	k8s.io/component-base v0.27.3 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
