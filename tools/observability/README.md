@@ -1,7 +1,7 @@
 # Observability
 
 Observability tool is a way to inspect the end result of perf tests.
-Perf test ends with snapshot of Prometheus TBSD save on the host which run the perf test (defaults to `/tmp/prom-snapshots`).
+Perf test ends with snapshot of Prometheus TSDB save on the host which run the perf test (defaults to `/tmp/prom-snapshots`).
 This directory will look like this
 ```
 ❯❯❯ ll -la /tmp/prom-snapshots/
@@ -22,8 +22,6 @@ PROM_SNAPSHOT_PATH=/tmp/prom-snapshots/20230629T134058Z-035f3439076d9f04 docker-
 
 Grafana will be forwarded to `localhost:3000`. Kuma CP dashboard should be ready.
 
-To update `kuma-cp.json` dashboard run
-```sh
-cp ../../../kuma/app/kumactl/data/install/k8s/metrics/grafana/kuma-cp.json grafana/provisioning/dashboards/kuma-cp.json
-sed -i '' 's/${DS_PROMETHEUS}/Prometheus/' grafana/provisioning/dashboards/kuma-cp.json
-```
+To update `kuma-cp.json` dashboard:
+* place `mesh-perf` project next to `kuma`
+* run `make upgrade/dashboards` from the top level directory of `mesh-perf`.
