@@ -10,6 +10,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/kumahq/kuma/pkg/test"
+
+	"github.com/kong/mesh-perf/test/framework"
 )
 
 func TestE2E(t *testing.T) {
@@ -18,6 +20,8 @@ func TestE2E(t *testing.T) {
 
 var cluster Cluster
 var meshVersion string
+
+const obsNamespace = "mesh-observability"
 
 var _ = BeforeSuite(func() {
 	kubeConfigPath := os.Getenv("KUBECONFIG")
@@ -29,10 +33,11 @@ var _ = BeforeSuite(func() {
 	cluster.(*K8sCluster).WithKubeConfig(os.ExpandEnv(kubeConfigPath))
 	err := cluster.Install(obs.Install(
 		"obs",
-		obs.WithNamespace("mesh-observability"),
+		obs.WithNamespace(obsNamespace),
 		obs.WithComponents(obs.PrometheusComponent, obs.GrafanaComponent),
 	))
 	Expect(err).ToNot(HaveOccurred())
+	Expect(framework.EnablePrometheusAdminAPI(obsNamespace, cluster)).To(Succeed())
 	meshVersion := os.Getenv("MESH_VERSION")
 	if meshVersion == "" {
 		panic("MESH_VERSION has to be defined")
@@ -40,6 +45,11 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
+	promSnapshotsDir := os.Getenv("PROM_SNAPSHOTS_DIR")
+	if promSnapshotsDir == "" {
+		promSnapshotsDir = "/tmp/prom-snapshots"
+	}
+	Expect(framework.SavePrometheusSnapshot(cluster, obsNamespace, promSnapshotsDir)).To(Succeed())
 	Expect(cluster.DeleteDeployment("obs")).To(Succeed())
 })
 
