@@ -13,4 +13,4 @@ jobs:
   lifecycle:
     uses: kumahq/.github/.github/workflows/wfc_lifecycle.yml@main
     with:
-      filesToIgnore: "CODE_OF_CONDUCT.md,LICENSE,SECURITY.md,CODEOWNERS"
+      filesToIgnore: "CODE_OF_CONDUCT.md,LICENSE,SECURITY.md,CODEOWNERS,GOVERNANCE.md,CONTRIBUTING.md"
