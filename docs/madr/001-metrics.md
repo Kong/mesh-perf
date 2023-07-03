@@ -28,12 +28,19 @@ P50, P90, P99 of
 * Latency of Kube API server responses (exposed by Kubernetes)
 * Latency of DB operations (exposed by Kuma)
 * Kuma API server responses
+  * We can create a process in the background to generate requests (like DP request every 1s) to see what is the latency.
 * All Kuma components that have tickers (like insights, sub finalizer etc.)
+  * It's not available yet.
 
 Number of
 * XDS reconciliations
 * Kubernetes reconciliations
 * Number of DB queries
+
+Cache:
+* Instrument all caches in the system with consistent metrics
+
+The goal is to check perf of the CP, so we should not scrape DPP metrics for now.
 
 ### Scenarios
 
