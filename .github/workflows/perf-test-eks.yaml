@@ -37,4 +37,5 @@ jobs:
       - name: Run tests
         run: MESH_VERSION=${{ inputs.version }} make run
       - name: Destroy cluster
+        if: always()
         run: ENV=eks make destroy-cluster
