@@ -1,0 +1,35 @@
+name: "Perf tests on EKS"
+on:
+  workflow_dispatch:
+    inputs:
+      mesh_version:
+        description: "Mesh version"
+        required: true
+        type: string
+jobs:
+  perf-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/mesh-perf-ci
+          aws-region: us-west-1
+      - name: Setup go
+        uses: actions/setup-go@v3
+        with:
+          go-version: '^1.20'
+          cache: true
+          cache-dependency-path: go.sum
+      - name: make dev/tools
+        run: make dev/tools
+      - name: Start cluster
+        run: ENV=eks make start-cluster
+      - name: Configure kubectl
+        run: aws eks --region us-west-1 update-kubeconfig --name mesh-perf
+      - name: Run tests
+        run: MESH_VERSION=${{ inputs.version }} make run
+      - name: Destroy cluster
+        run: ENV=eks make destroy-cluster
