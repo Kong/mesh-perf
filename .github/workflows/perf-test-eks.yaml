@@ -30,6 +30,8 @@ jobs:
           cache-dependency-path: go.sum
       - name: make dev/tools
         run: make dev/tools
+      - name: remove kms alias - temp
+        run: aws kms --region us-west-1 delete-alias --alias-name alias/eks/mesh-perf
       - name: Start cluster
         run: ENV=eks make start-cluster
       - name: Configure kubectl
