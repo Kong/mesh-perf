@@ -6,6 +6,11 @@ on:
         description: "Mesh version"
         required: true
         type: string
+
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   perf-test:
     runs-on: ubuntu-latest
