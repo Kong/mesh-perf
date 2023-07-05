@@ -24,7 +24,7 @@ func Simple() {
 			WithInstallationMode(HelmInstallationMode),
 			WithHelmChartVersion(meshVersion),
 			WithHelmReleaseName(fmt.Sprintf("kuma-%s", strings.ToLower(random.UniqueId()))),
-			WithHelmChartPath(Config.HelmChartName), // we pass chart name to use production chart
+			WithHelmChartPath(Config.HelmChartPath), // we pass chart name to use production chart
 			WithoutHelmOpt("global.image.tag"),      // required to use production chart
 			WithHelmOpt(`controlPlane.podAnnotations.prometheus\.io/port`, "5680"),
 			WithHelmOpt(`controlPlane.podAnnotations.prometheus\.io/scrape`, "true"),

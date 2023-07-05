@@ -1,6 +1,7 @@
 package k8s_test
 
 import (
+	"github.com/gruntwork-io/terratest/modules/helm"
 	"os"
 	"testing"
 
@@ -29,6 +30,9 @@ var _ = BeforeSuite(func() {
 		kubeConfigPath = "${HOME}/.kube/config"
 	}
 	cluster = NewK8sCluster(NewTestingT(), "mesh-perf", true)
+
+	Expect(helm.RunHelmCommandAndGetOutputE(cluster.GetTesting(), &helm.Options{},
+		"repo", "add", "--force-update", Config.HelmChartName, Config.HelmRepoUrl)).Error().To(BeNil())
 
 	cluster.(*K8sCluster).WithKubeConfig(os.ExpandEnv(kubeConfigPath))
 	err := cluster.Install(obs.Install(

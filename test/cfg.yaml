@@ -1,6 +1,6 @@
-helmChartName: kong-mesh/kong-mesh
+helmChartName: kong-mesh
 helmRepoUrl: https://kong.github.io/kong-mesh-charts
-helmChartPath: ""
+helmChartPath: "kong-mesh/kong-mesh"
 helmSubChartPrefix: kuma.
 imageRegistry: kong
 namespace: kong-mesh-system
