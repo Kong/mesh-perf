@@ -20,6 +20,10 @@ Chosen option: "Set of metrics"
 
 ### Set of metrics
 
+Resource utilization:
+* CPU usage
+* Memory usage
+
 P50, P90, P99 of
 * Time between applying Deployment and Pod be ready (exposed by Kubernetes?)
 * XDS config delivery (time between setting the config into snapshot up to receiving ACK/NACK)
@@ -29,11 +33,11 @@ P50, P90, P99 of
 * Latency of DB operations (exposed by Kuma)
 * Kuma API server responses
   * We can create a process in the background to generate requests (like DP request every 1s) to see what is the latency.
-* All Kuma components that have tickers (like insights, sub finalizer etc.)
+* Latency of tick for all Kuma components that have tickers (like insights, sub finalizer etc.)
   * It's not available yet.
 
 Number of
-* XDS reconciliations
+* XDS reconciliations (consider counting real reconciliations i.e. only if mesh hash has changed)
 * Kubernetes reconciliations
 * Number of DB queries
 
