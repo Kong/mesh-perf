@@ -55,6 +55,14 @@ module "eks" {
       desired_size = var.nodes_number
     }
   }
+
+  aws_auth_roles = [
+    {
+      rolearn  = "arn:aws:iam::${ var.aws_role_id }:role/mesh-perf-ci"
+      username = "mesh-perf-ci"
+      groups   = ["system:masters"]
+    },
+  ]
 }
 
 data "aws_iam_policy" "ebs_csi_policy" {

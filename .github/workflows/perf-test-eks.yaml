@@ -31,7 +31,7 @@ jobs:
       - name: make dev/tools
         run: make dev/tools
       - name: Start cluster
-        run: ENV=eks make start-cluster
+        run: ENV=eks TF_VARS="aws_role_id=${{ secrets.AWS_ACCOUNT_ID }}" make start-cluster
       - name: Configure kubectl
         run: aws eks --region us-west-1 update-kubeconfig --name mesh-perf
       - name: Run tests
