@@ -56,6 +56,8 @@ module "eks" {
     }
   }
 
+  manage_aws_auth_configmap = true
+
   aws_auth_roles = [
     {
       rolearn  = "arn:aws:iam::${ var.aws_role_id }:role/mesh-perf-ci"
