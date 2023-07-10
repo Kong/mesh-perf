@@ -27,6 +27,7 @@ func Simple() {
 			WithHelmChartPath(Config.HelmChartPath), // we pass chart name to use production chart
 			WithoutHelmOpt("global.image.tag"),      // required to use production chart
 			WithHelmOpt(`controlPlane.logLevel`, `debug`),
+			WithHelmOpt(`controlPlane.admissionServerPort`, `443`),
 			WithHelmOpt(`controlPlane.podAnnotations.prometheus\.io/port`, "5680"),
 			WithHelmOpt(`controlPlane.podAnnotations.prometheus\.io/scrape`, "true"),
 		}
