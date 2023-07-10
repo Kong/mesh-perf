@@ -55,6 +55,17 @@ module "eks" {
       desired_size = var.nodes_number
     }
   }
+
+  node_security_group_additional_rules = {
+    ingress_allow_access_from_control_plane = {
+      type                          = "ingress"
+      protocol                      = "tcp"
+      from_port                     = 5443
+      to_port                       = 5443
+      source_cluster_security_group = true
+      description                   = "Allow access from control plane to webhook port of AWS load balancer controller"
+    }
+  }
 }
 
 data "aws_iam_policy" "ebs_csi_policy" {
