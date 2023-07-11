@@ -17,7 +17,7 @@ func EnablePrometheusAdminAPI(namespace string, cluster framework.Cluster) error
 		cluster.GetTesting(),
 		cluster.GetKubectlOptions(namespace),
 		"patch", "deployment", "prometheus-server", "--type", "json",
-		"-p", `[{"op": "add", "path": "/spec/template/spec/containers/1/args/-", "value": "--storage.tsdb.no-lockfile"},{"op": "add", "path": "/spec/template/spec/containers/1/args/-", "value": "--web.enable-admin-api"}]`,
+		"-p", `[{"op": "add", "path": "/spec/template/spec/containers/1/args/-", "value": "--storage.tsdb.no-lockfile"},{"op": "add", "path": "/spec/template/spec/containers/1/args/-", "value": "--web.enable-admin-api"},{"op": "replace", "path": "/spec/strategy/rollingUpdate"},{"op": "replace", "path": "/spec/strategy/type", "value": "Recreate"}]`,
 	)
 }
 
