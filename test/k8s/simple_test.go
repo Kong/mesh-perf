@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gruntwork-io/terratest/modules/random"
+	. "github.com/kong/mesh-perf/test/framework"
 	"github.com/kumahq/kuma-tools/graph"
 	"github.com/kumahq/kuma/pkg/config/core"
 	. "github.com/kumahq/kuma/test/framework"
@@ -58,6 +59,14 @@ data:
 			Install(NamespaceWithSidecarInjection(TestNamespace)).
 			Setup(cluster)
 		Expect(err).ToNot(HaveOccurred())
+	})
+
+	BeforeEach(func() {
+		Expect(ReportSpecStart(cluster)).To(Succeed())
+	})
+
+	AfterEach(func() {
+		Expect(ReportSpecEnd(cluster)).To(Succeed())
 	})
 
 	E2EAfterAll(func() {
