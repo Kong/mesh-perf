@@ -80,7 +80,7 @@ data:
 			WithMesh:              true,
 			Namespace:             TestNamespace,
 			Mesh:                  "default",
-			Image:                 "nicholasjackson/fake-service:v0.21.1",
+			Image:                 "nicholasjackson/fake-service:v0.25.2",
 		})
 		Expect(err).ToNot(HaveOccurred())
 
