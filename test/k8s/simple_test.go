@@ -6,30 +6,21 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/gruntwork-io/terratest/modules/random"
-	. "github.com/kong/mesh-perf/test/framework"
 	"github.com/kumahq/kuma-tools/graph"
 	"github.com/kumahq/kuma/pkg/config/core"
 	. "github.com/kumahq/kuma/test/framework"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
+	. "github.com/kong/mesh-perf/test/framework"
 )
 
 func Simple() {
 	BeforeAll(func() {
-		opts := []KumaDeploymentOption{
-			WithInstallationMode(HelmInstallationMode),
-			WithHelmChartVersion(meshVersion),
-			WithHelmReleaseName(fmt.Sprintf("kuma-%s", strings.ToLower(random.UniqueId()))),
-			WithHelmChartPath(Config.HelmChartPath), // we pass chart name to use production chart
-			WithoutHelmOpt("global.image.tag"),      // required to use production chart
-			WithHelmOpt(`controlPlane.podAnnotations.prometheus\.io/port`, "5680"),
-			WithHelmOpt(`controlPlane.podAnnotations.prometheus\.io/scrape`, "true"),
-		}
+		opts := []KumaDeploymentOption{}
 
 		if license := os.Getenv("KMESH_LICENSE_INLINE"); license != "" {
 			licenseEncoded := base64.StdEncoding.EncodeToString([]byte(license))

@@ -4,14 +4,13 @@ import (
 	"os"
 	"testing"
 
+	"github.com/kumahq/kuma/pkg/test"
 	. "github.com/kumahq/kuma/test/framework"
 	obs "github.com/kumahq/kuma/test/framework/deployments/observability"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"github.com/gruntwork-io/terratest/modules/helm"
 	"github.com/kong/mesh-perf/test/framework"
-	"github.com/kumahq/kuma/pkg/test"
 )
 
 func TestE2E(t *testing.T) {
@@ -19,21 +18,16 @@ func TestE2E(t *testing.T) {
 }
 
 var cluster *K8sCluster
-var meshVersion string
 
-const (
-	obsNamespace = "mesh-observability"
-)
+const obsNamespace = "mesh-observability"
 
 var _ = BeforeSuite(func() {
 	kubeConfigPath := os.Getenv("KUBECONFIG")
 	if kubeConfigPath == "" {
 		kubeConfigPath = "${HOME}/.kube/config"
 	}
-	cluster = NewK8sCluster(NewTestingT(), "mesh-perf", true)
 
-	Expect(helm.RunHelmCommandAndGetOutputE(cluster.GetTesting(), &helm.Options{},
-		"repo", "add", "--force-update", Config.HelmChartName, Config.HelmRepoUrl)).Error().To(BeNil())
+	cluster = NewK8sCluster(NewTestingT(), "mesh-perf", true)
 
 	cluster.WithKubeConfig(os.ExpandEnv(kubeConfigPath))
 	err := cluster.Install(obs.Install(
@@ -48,11 +42,6 @@ var _ = BeforeSuite(func() {
 	Eventually(func() error {
 		return framework.PortForwardPrometheusPushgateway(cluster, obsNamespace)
 	}, "30s", "1s").Should(Succeed())
-
-	meshVersion := os.Getenv("MESH_VERSION")
-	if meshVersion == "" {
-		panic("MESH_VERSION has to be defined")
-	}
 })
 
 var _ = AfterSuite(func() {

@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/go-errors/errors v1.4.2
 	github.com/gruntwork-io/terratest v0.41.15
-	github.com/kumahq/kuma v0.0.0-20230707154427-77a2d5166b39
+	github.com/kumahq/kuma v0.0.0-20230717095426-746dc0de4d15
 	github.com/kumahq/kuma-tools v0.0.2
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.8
