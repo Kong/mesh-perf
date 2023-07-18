@@ -8,3 +8,4 @@ include mk/check.mk
 include mk/run.mk
 include mk/upgrade.mk
 include mk/infrastructure.mk
+include mk/grafana.mk
