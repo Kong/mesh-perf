@@ -15,6 +15,7 @@ GOARCH := $(shell go env GOARCH)
 
 TERRAFORM=$(CI_TOOLS_BIN_DIR)/terraform
 JSONNET=$(CI_TOOLS_BIN_DIR)/jsonnet
+JSONNET_BUNDLER=$(CI_TOOLS_BIN_DIR)/jb
 
 .PHONY: dev/tools/ginkgo
 dev/tools/ginkgo:
