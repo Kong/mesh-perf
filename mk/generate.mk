@@ -1,0 +1,22 @@
+DASHBOARDS_DIR=tools/observability/grafana/provisioning/dashboards
+JSONNET_BUNDLER_CACHE_DIR=build/jsonnet
+
+dashboards = $(foreach dir,$(shell find $(DASHBOARDS_DIR) -maxdepth 1 -mindepth 1 -type d | sort),$(notdir $(dir)))
+
+$(JSONNET_BUNDLER_CACHE_DIR):
+	jb update --jsonnetpkg-home=$(JSONNET_BUNDLER_CACHE_DIR)
+
+generate-grafana-%:
+	$(JSONNET) -J $(JSONNET_BUNDLER_CACHE_DIR) $(DASHBOARDS_DIR)/$*/main.libsonnet -o $(DASHBOARDS_DIR)/$*.json
+
+.PHONY: generate-grafana
+generate-grafana: $(JSONNET_BUNDLER_CACHE_DIR) $(addprefix generate-grafana-,$(dashboards))
+
+.PHONY: generate
+generate: generate-grafana
+
+clean-%: 
+	rm $(DASHBOARDS_DIR)/$*.json
+
+.PHONY: clean
+clean: $(addprefix clean-,$(dashboards))

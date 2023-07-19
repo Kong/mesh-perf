@@ -14,6 +14,7 @@ GOOS := $(shell go env GOOS)
 GOARCH := $(shell go env GOARCH)
 
 TERRAFORM=$(CI_TOOLS_BIN_DIR)/terraform
+JSONNET=$(CI_TOOLS_BIN_DIR)/jsonnet
 
 .PHONY: dev/tools/ginkgo
 dev/tools/ginkgo:
