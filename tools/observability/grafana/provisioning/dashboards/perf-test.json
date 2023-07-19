@@ -1,0 +1,71 @@
+{
+   "annotations": {
+      "list": [
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "Prometheus"
+            },
+            "enable": true,
+            "expr": "test_status",
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Test Execution",
+            "titleFormat": "{{spec}}"
+         }
+      ]
+   },
+   "description": "Dashboards for Kong Mesh performance tests",
+   "panels": [
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 0
+         },
+         "id": 1,
+         "panels": [ ],
+         "title": "Kubernetes",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Average time between Pod creation and readiness",
+         "fieldConfig": {
+            "defaults": {
+               "unit": "ms"
+            }
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 0,
+            "y": 1
+         },
+         "id": 2,
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "Prometheus"
+               },
+               "expr": "avg(kube_pod_status_ready_time - kube_pod_created{namespace=\"kuma-test\"})"
+            }
+         ],
+         "title": "Pod Startup Time",
+         "type": "timeseries"
+      }
+   ],
+   "schemaVersion": 36,
+   "time": {
+      "from": "now-6h",
+      "to": "now"
+   },
+   "timezone": "utc",
+   "title": "Perf Test",
+   "uid": "perf-test"
+}
