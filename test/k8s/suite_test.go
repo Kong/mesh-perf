@@ -3,6 +3,7 @@ package k8s_test
 import (
 	"os"
 	"testing"
+	"time"
 
 	"github.com/kumahq/kuma/pkg/test"
 	. "github.com/kumahq/kuma/test/framework"
@@ -18,6 +19,7 @@ func TestE2E(t *testing.T) {
 }
 
 var cluster *K8sCluster
+var stabilizationSleep = 10 * time.Second
 
 const obsNamespace = "mesh-observability"
 
@@ -25,6 +27,14 @@ var _ = BeforeSuite(func() {
 	kubeConfigPath := os.Getenv("KUBECONFIG")
 	if kubeConfigPath == "" {
 		kubeConfigPath = "${HOME}/.kube/config"
+	}
+
+	if sleep := os.Getenv("STABILIZATION_SLEEP"); sleep != "" {
+		sleepDur, err := time.ParseDuration(sleep)
+		if err != nil {
+			panic(err)
+		}
+		stabilizationSleep = sleepDur
 	}
 
 	cluster = NewK8sCluster(NewTestingT(), "mesh-perf", true)

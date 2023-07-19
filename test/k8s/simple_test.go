@@ -57,6 +57,7 @@ data:
 	})
 
 	AfterEach(func() {
+		time.Sleep(stabilizationSleep)
 		Expect(ReportSpecEnd(cluster)).To(Succeed())
 	})
 
