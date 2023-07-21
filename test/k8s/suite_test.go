@@ -1,6 +1,7 @@
 package k8s_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -19,6 +20,7 @@ func TestE2E(t *testing.T) {
 }
 
 var cluster *K8sCluster
+var promClient *framework.PromClient
 var stabilizationSleep = 10 * time.Second
 
 const obsNamespace = "mesh-observability"
@@ -52,6 +54,13 @@ var _ = BeforeSuite(func() {
 	Eventually(func() error {
 		return framework.PortForwardPrometheusPushgateway(cluster, obsNamespace)
 	}, "30s", "1s").Should(Succeed())
+	Eventually(func() error {
+		return framework.PortForwardPrometheusServer(cluster, obsNamespace)
+	}, "30s", "1s").Should(Succeed())
+
+	endpoint := cluster.GetPortForward("prometheus-server").ApiServerEndpoint
+	promClient, err = framework.NewPromClient(fmt.Sprintf("http://%s", endpoint))
+	Expect(err).ToNot(HaveOccurred())
 })
 
 var _ = AfterSuite(func() {

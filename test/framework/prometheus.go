@@ -1,12 +1,18 @@
 package framework
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"os"
+	"time"
 
 	"github.com/go-errors/errors"
 	"github.com/gruntwork-io/terratest/modules/k8s"
 	"github.com/kumahq/kuma/test/framework"
+	"github.com/prometheus/client_golang/api"
+	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
+	"github.com/prometheus/common/model"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -80,4 +86,44 @@ type promSnapshotResponse struct {
 	Data   struct {
 		Name string `json:"name"`
 	} `json:"data"`
+}
+
+func PortForwardPrometheusServer(cluster *framework.K8sCluster, ns string) error {
+	return cluster.PortForwardService("prometheus-server", ns, 9090)
+}
+
+type PromClient struct {
+	queryClient v1.API
+}
+
+func NewPromClient(url string) (*PromClient, error) {
+	client, err := api.NewClient(api.Config{
+		Address: url,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &PromClient{
+		queryClient: v1.NewAPI(client),
+	}, nil
+}
+
+func (p *PromClient) QueryIntValue(query string) (int, error) {
+	result, _, err := p.queryClient.Query(context.Background(), query, time.Now())
+	if err != nil {
+		return 0, err
+	}
+
+	vector, ok := result.(model.Vector)
+	if !ok {
+		return 0, errors.New("Unexpected query result type")
+	}
+
+	if len(vector) == 0 {
+		return 0, fmt.Errorf("No results found for the query: %s", query)
+	}
+
+	return int(vector[0].Value), nil
 }
