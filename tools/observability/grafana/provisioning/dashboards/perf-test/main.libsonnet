@@ -31,9 +31,9 @@ g.dashboard.new('Perf Test')
       'Latency of Kube API server responses', 
       'The latency between a request sent from a client and a response returned by kube-apiserver', 
       [
-        queries.kubeApiServerRequestLatency(ds.uid, "0.99"),
+        queries.kubeApiServerRequestLatency(ds.uid, "0.50"),
         queries.kubeApiServerRequestLatency(ds.uid, "0.90"),
-        queries.kubeApiServerRequestLatency(ds.uid, "0.50")
+        queries.kubeApiServerRequestLatency(ds.uid, "0.99"),
       ]),
   ]),
   
@@ -51,17 +51,17 @@ g.dashboard.new('Perf Test')
       'Latency of store operations',
       'The latency between a request sent from a Kuma CP and a response returned by store',
       [
-        queries.kumaStoreRequestLatency(ds.uid, "0.99"),
-        queries.kumaStoreRequestLatency(ds.uid, "0.90"),
         queries.kumaStoreRequestLatency(ds.uid, "0.50"),
+        queries.kumaStoreRequestLatency(ds.uid, "0.90"),
+        queries.kumaStoreRequestLatency(ds.uid, "0.99"),
       ]),
     panels.seconds(
       'Latency of Kuma API server responses',
       'The latency between a request sent from a client and a response returned by Kuma API Server',
       [
-        queries.kumaApiServerLatency(ds.uid, "0.99"),
-        queries.kumaApiServerLatency(ds.uid, "0.90"),
         queries.kumaApiServerLatency(ds.uid, "0.50"),
+        queries.kumaApiServerLatency(ds.uid, "0.90"),
+        queries.kumaApiServerLatency(ds.uid, "0.99"),
       ]),
     panels.opsPerSec(
       'Number of XDS reconciliations',
