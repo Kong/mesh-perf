@@ -21,6 +21,7 @@ import (
 
 func Simple() {
 	numServices := 5
+	var start time.Time
 
 	BeforeAll(func() {
 		opts := []KumaDeploymentOption{}
@@ -62,11 +63,16 @@ data:
 
 	BeforeEach(func() {
 		Expect(ReportSpecStart(cluster)).To(Succeed())
+		start = time.Now()
+		AddReportEntry("spec.start", start)
 	})
 
 	AfterEach(func() {
 		time.Sleep(stabilizationSleep)
 		Expect(ReportSpecEnd(cluster)).To(Succeed())
+		end := time.Now()
+		AddReportEntry("spec.end", end)
+		AddReportEntry("spec.duration", end.Sub(start))
 	})
 
 	E2EAfterAll(func() {
@@ -96,6 +102,9 @@ data:
 
 		wg := sync.WaitGroup{}
 		wg.Add(numServices)
+
+		start := time.Now()
+
 		for i := 0; i < numServices; i++ {
 			name := fmt.Sprintf("srv-%03d", i)
 			go func() {
@@ -111,7 +120,7 @@ data:
 		}
 		wg.Wait()
 
-		//time.Sleep(10 * time.Hour)
+		AddReportEntry("duration", time.Now().Sub(start))
 	})
 
 	It("should deploy mesh wide policy", func() {
@@ -140,12 +149,14 @@ spec:
               status: 429
 `
 		Expect(cluster.Install(YamlK8s(policy))).To(Succeed())
+		start := time.Now()
 
 		Eventually(func(g Gomega) {
 			newDeliveryCount, err := XdsDeliveryCount(promClient)
 			g.Expect(err).ToNot(HaveOccurred())
 			g.Expect(newDeliveryCount - deliveryCount).To(Equal(numServices))
 		}, "60s", "1s").Should(Succeed())
+		AddReportEntry("duration", time.Now().Sub(start))
 	})
 
 	Context("scaling", func() {
@@ -162,19 +173,24 @@ spec:
 		}
 
 		It("should scale up a service", func() {
+			start := time.Now()
 			scale(2)
 			// there is no straightforward way to check if all Envoys received the config with the new endpoint, therefore we need to rely on stabilization sleep
+			AddReportEntry("duration", time.Now().Sub(start))
 		})
 
 		It("should scale down a service", func() {
+			start := time.Now()
 			scale(1)
 			// there is no straightforward way to check if all Envoys received the config without the removed endpoint, therefore we need to rely on stabilization sleep
+			AddReportEntry("duration", time.Now().Sub(start))
 		})
 	})
 
 	It("should distribute certs when mTLS is enabled", func() {
 		Expect(cluster.Install(MTLSMeshKubernetes("default"))).To(Succeed())
 
+		start := time.Now()
 		Eventually(func(g Gomega) {
 			out, err := k8s.RunKubectlAndGetOutputE(
 				cluster.GetTesting(),
@@ -184,5 +200,6 @@ spec:
 			g.Expect(err).ToNot(HaveOccurred())
 			g.Expect(out).To(Equal(fmt.Sprintf("'%d'", numServices)))
 		}, "60s", "1s").Should(Succeed())
+		AddReportEntry("duration", time.Now().Sub(start))
 	})
 }
