@@ -26,7 +26,7 @@ func Simple() {
 	BeforeAll(func() {
 		opts := []KumaDeploymentOption{}
 
-		if license := os.Getenv("KMESH_LICENSE_INLINE"); license != "" {
+		if license := os.Getenv("KMESH_LICENSE"); license != "" {
 			licenseEncoded := base64.StdEncoding.EncodeToString([]byte(license))
 			err := NewClusterSetup().
 				Install(Namespace(Config.KumaNamespace)).
@@ -43,10 +43,9 @@ data:
 				Setup(cluster)
 			Expect(err).ToNot(HaveOccurred())
 			opts = append(opts,
-				WithHelmOpt("controlPlane.secrets[0].Env", "KMESH_LICENSE_INLINE"),
-				WithHelmOpt("controlPlane.secrets[0].Secret", "kong-mesh-license"),
-				WithHelmOpt("controlPlane.secrets[0].Key", "license.json"),
-			)
+				WithCtlOpts(map[string]string{
+					"--license-path": license,
+				}))
 		}
 
 		err := NewClusterSetup().
