@@ -3,10 +3,10 @@ local g = import 'g.libsonnet';
 local pq = g.query.prometheus;
 
 {
-  avgPodTimeToStart(ds):
+  podTimeToStart(ds, quantile):
     pq.new(ds,
-      'avg(kube_pod_status_ready_time - kube_pod_created{namespace="kuma-test"})'
-    ),
+      'quantile(%s, kube_pod_status_ready_time - kube_pod_created{namespace="kuma-test"})' % quantile
+    ) + pq.withLegendFormat(quantile),
   
   xdsDelivery(ds):
     pq.new(ds,
@@ -51,5 +51,16 @@ local pq = g.query.prometheus;
   kumaMeshCache(ds):
     pq.new(ds,
       'sum by (result) (rate(mesh_cache[$__rate_interval]))'
-    ) + pq.withLegendFormat('{{result}}')
+    ) + pq.withLegendFormat('{{result}}'),
+
+  controllerRuntimeReconcileLatency(ds, quantile):
+    pq.new(ds,
+      'histogram_quantile(%s, sum(rate(controller_runtime_reconcile_time_seconds_bucket{controller="pod"}[$__rate_interval])) by (le))' % quantile
+    ) + pq.withLegendFormat(quantile),
+
+  controllerRuntimeReconcileRate(ds):
+    pq.new(ds,
+      'sum by (result) (rate(controller_runtime_reconcile_total{controller="pod"}[$__rate_interval]))'
+    ) + pq.withLegendFormat('{{result}}'),
+
 }

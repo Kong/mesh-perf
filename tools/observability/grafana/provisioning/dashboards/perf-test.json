@@ -53,7 +53,24 @@
                   "type": "prometheus",
                   "uid": "Prometheus"
                },
-               "expr": "avg(kube_pod_status_ready_time - kube_pod_created{namespace=\"kuma-test\"})"
+               "expr": "quantile(0.50, kube_pod_status_ready_time - kube_pod_created{namespace=\"kuma-test\"})",
+               "legendFormat": "0.50"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "Prometheus"
+               },
+               "expr": "quantile(0.90, kube_pod_status_ready_time - kube_pod_created{namespace=\"kuma-test\"})",
+               "legendFormat": "0.90"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "Prometheus"
+               },
+               "expr": "quantile(0.99, kube_pod_status_ready_time - kube_pod_created{namespace=\"kuma-test\"})",
+               "legendFormat": "0.99"
             }
          ],
          "title": "Pod Startup Time",
@@ -107,14 +124,92 @@
          "type": "timeseries"
       },
       {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Length of time per reconcile for pod controller",
+         "fieldConfig": {
+            "defaults": {
+               "unit": "s"
+            }
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 16,
+            "y": 1
+         },
+         "id": 4,
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "Prometheus"
+               },
+               "expr": "histogram_quantile(0.50, sum(rate(controller_runtime_reconcile_time_seconds_bucket{controller=\"pod\"}[$__rate_interval])) by (le))",
+               "legendFormat": "0.50"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "Prometheus"
+               },
+               "expr": "histogram_quantile(0.90, sum(rate(controller_runtime_reconcile_time_seconds_bucket{controller=\"pod\"}[$__rate_interval])) by (le))",
+               "legendFormat": "0.90"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "Prometheus"
+               },
+               "expr": "histogram_quantile(0.99, sum(rate(controller_runtime_reconcile_time_seconds_bucket{controller=\"pod\"}[$__rate_interval])) by (le))",
+               "legendFormat": "0.99"
+            }
+         ],
+         "title": "Latency of Pod to Dataplane conversion",
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "",
+         "fieldConfig": {
+            "defaults": {
+               "unit": "ops"
+            }
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 0,
+            "y": 10
+         },
+         "id": 5,
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "Prometheus"
+               },
+               "expr": "sum by (result) (rate(controller_runtime_reconcile_total{controller=\"pod\"}[$__rate_interval]))",
+               "legendFormat": "{{result}}"
+            }
+         ],
+         "title": "Number of Pod reconciliation ",
+         "type": "timeseries"
+      },
+      {
          "collapsed": false,
          "gridPos": {
             "h": 1,
             "w": 24,
             "x": 0,
-            "y": 9
+            "y": 18
          },
-         "id": 4,
+         "id": 6,
          "panels": [ ],
          "title": "Kuma Control Plane",
          "type": "row"
@@ -134,9 +229,9 @@
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 10
+            "y": 19
          },
-         "id": 5,
+         "id": 7,
          "targets": [
             {
                "datasource": {
@@ -165,9 +260,9 @@
             "h": 8,
             "w": 8,
             "x": 8,
-            "y": 10
+            "y": 19
          },
-         "id": 6,
+         "id": 8,
          "targets": [
             {
                "datasource": {
@@ -196,9 +291,9 @@
             "h": 8,
             "w": 8,
             "x": 16,
-            "y": 10
+            "y": 19
          },
-         "id": 7,
+         "id": 9,
          "targets": [
             {
                "datasource": {
@@ -243,9 +338,9 @@
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 19
+            "y": 28
          },
-         "id": 8,
+         "id": 10,
          "targets": [
             {
                "datasource": {
@@ -290,9 +385,9 @@
             "h": 8,
             "w": 8,
             "x": 8,
-            "y": 19
+            "y": 28
          },
-         "id": 9,
+         "id": 11,
          "targets": [
             {
                "datasource": {
@@ -321,9 +416,9 @@
             "h": 8,
             "w": 8,
             "x": 16,
-            "y": 19
+            "y": 28
          },
-         "id": 10,
+         "id": 12,
          "targets": [
             {
                "datasource": {
@@ -357,9 +452,9 @@
             "h": 8,
             "w": 8,
             "x": 0,
-            "y": 28
+            "y": 37
          },
-         "id": 11,
+         "id": 13,
          "targets": [
             {
                "datasource": {
@@ -393,9 +488,9 @@
             "h": 8,
             "w": 8,
             "x": 8,
-            "y": 28
+            "y": 37
          },
-         "id": 12,
+         "id": 14,
          "targets": [
             {
                "datasource": {
