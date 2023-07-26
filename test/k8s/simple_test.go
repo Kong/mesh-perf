@@ -107,6 +107,10 @@ func Simple() {
 	})
 
 	It("should deploy mesh wide policy", func() {
+		endpoint := cluster.GetPortForward("prometheus-server").ApiServerEndpoint
+		promClient, err := NewPromClient(fmt.Sprintf("http://%s", endpoint))
+		Expect(err).ToNot(HaveOccurred())
+
 		deliveryCount, err := XdsDeliveryCount(promClient)
 		Expect(err).ToNot(HaveOccurred())
 
