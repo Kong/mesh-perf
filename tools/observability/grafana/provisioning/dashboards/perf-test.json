@@ -202,6 +202,42 @@
          "type": "timeseries"
       },
       {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Number of cache operations for Kubernetes authentication on XDS connection",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 25,
+                  "stacking": {
+                     "mode": "percent"
+                  }
+               }
+            }
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 8,
+            "y": 10
+         },
+         "id": 6,
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "Prometheus"
+               },
+               "expr": "sum by (result) (rate(kube_auth_cache[$__rate_interval]))",
+               "legendFormat": "{{result}}"
+            }
+         ],
+         "title": "Kube Auth cache performance",
+         "type": "timeseries"
+      },
+      {
          "collapsed": false,
          "gridPos": {
             "h": 1,
@@ -209,7 +245,7 @@
             "x": 0,
             "y": 18
          },
-         "id": 6,
+         "id": 7,
          "panels": [ ],
          "title": "Kuma Control Plane",
          "type": "row"
@@ -231,7 +267,7 @@
             "x": 0,
             "y": 19
          },
-         "id": 7,
+         "id": 8,
          "targets": [
             {
                "datasource": {
@@ -262,7 +298,7 @@
             "x": 8,
             "y": 19
          },
-         "id": 8,
+         "id": 9,
          "targets": [
             {
                "datasource": {
@@ -293,7 +329,7 @@
             "x": 16,
             "y": 19
          },
-         "id": 9,
+         "id": 10,
          "targets": [
             {
                "datasource": {
@@ -340,7 +376,7 @@
             "x": 0,
             "y": 28
          },
-         "id": 10,
+         "id": 11,
          "targets": [
             {
                "datasource": {
@@ -387,7 +423,7 @@
             "x": 8,
             "y": 28
          },
-         "id": 11,
+         "id": 12,
          "targets": [
             {
                "datasource": {
@@ -418,7 +454,7 @@
             "x": 16,
             "y": 28
          },
-         "id": 12,
+         "id": 13,
          "targets": [
             {
                "datasource": {
@@ -454,7 +490,7 @@
             "x": 0,
             "y": 37
          },
-         "id": 13,
+         "id": 14,
          "targets": [
             {
                "datasource": {
@@ -490,7 +526,7 @@
             "x": 8,
             "y": 37
          },
-         "id": 14,
+         "id": 15,
          "targets": [
             {
                "datasource": {

@@ -53,6 +53,11 @@ local pq = g.query.prometheus;
       'sum by (result) (rate(mesh_cache[$__rate_interval]))'
     ) + pq.withLegendFormat('{{result}}'),
 
+  kubeAuthCache(ds):
+    pq.new(ds,
+      'sum by (result) (rate(kube_auth_cache[$__rate_interval]))'
+    ) + pq.withLegendFormat('{{result}}'),
+
   controllerRuntimeReconcileLatency(ds, quantile):
     pq.new(ds,
       'histogram_quantile(%s, sum(rate(controller_runtime_reconcile_time_seconds_bucket{controller="pod"}[$__rate_interval])) by (le))' % quantile

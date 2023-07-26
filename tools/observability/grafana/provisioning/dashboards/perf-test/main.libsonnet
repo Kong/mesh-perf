@@ -51,6 +51,10 @@ g.dashboard.new('Perf Test')
       'Number of Pod reconciliation ',
       '',
       queries.controllerRuntimeReconcileRate(ds.uid)),
+    panels.cacheHitMissRatio(
+      'Kube Auth cache performance',
+      'Number of cache operations for Kubernetes authentication on XDS connection',
+      queries.kubeAuthCache(ds.uid)),
   ]),
   
   row.new('Kuma Control Plane')
