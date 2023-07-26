@@ -2,7 +2,6 @@ package k8s_test
 
 import (
 	"bytes"
-	"encoding/base64"
 	"fmt"
 	"os"
 	"strconv"
@@ -27,21 +26,6 @@ func Simple() {
 		opts := []KumaDeploymentOption{}
 
 		if license := os.Getenv("KMESH_LICENSE"); license != "" {
-			licenseEncoded := base64.StdEncoding.EncodeToString([]byte(license))
-			err := NewClusterSetup().
-				Install(Namespace(Config.KumaNamespace)).
-				Install(YamlK8s(fmt.Sprintf(`
-apiVersion: v1
-kind: Secret
-metadata:
-  name: kong-mesh-license
-  namespace: %s
-type: Opaque
-data:
-  license.json: %s
-`, Config.KumaNamespace, licenseEncoded))).
-				Setup(cluster)
-			Expect(err).ToNot(HaveOccurred())
 			opts = append(opts,
 				WithCtlOpts(map[string]string{
 					"--license-path": license,
