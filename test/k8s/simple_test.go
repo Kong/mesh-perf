@@ -195,6 +195,7 @@ spec:
 	})
 
 	It("should distribute certs when mTLS is enabled", func() {
+		expectedCerts := numServices + 1
 		Expect(cluster.Install(MTLSMeshKubernetes("default"))).To(Succeed())
 
 		start := time.Now()
@@ -205,7 +206,7 @@ spec:
 				"get", "meshinsights", "default", "-ojsonpath='{.spec.mTLS.issuedBackends.ca-1.total}'",
 			)
 			g.Expect(err).ToNot(HaveOccurred())
-			g.Expect(out).To(Equal(fmt.Sprintf("'%d'", numServices)))
+			g.Expect(out).To(Equal(fmt.Sprintf("'%d'", expectedCerts)))
 		}, "60s", "1s").Should(Succeed())
 		AddReportEntry("duration", time.Now().Sub(start))
 	})
