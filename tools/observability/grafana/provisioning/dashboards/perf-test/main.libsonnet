@@ -48,7 +48,7 @@ g.dashboard.new('Perf Test')
         queries.controllerRuntimeReconcileLatency(ds.uid, "0.99"),
       ]),
     panels.opsPerSec(
-      'Number of Pod reconciliation ',
+      'Number of Pod reconciliation',
       '',
       queries.controllerRuntimeReconcileRate(ds.uid)),
     panels.cacheHitMissRatio(
