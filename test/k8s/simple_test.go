@@ -73,17 +73,17 @@ data:
 			Expect(err).ToNot(HaveOccurred(), "invalid value of TEST_NUM_SERVICES")
 			numServices = i
 		}
-		services := graph.GenerateRandomServiceMesh(GinkgoRandomSeed(), numServices, 50, 1, 1)
+
+		services := graph.GenerateRandomServiceMesh(872835240, numServices, 50, 1, 1)
 		buffer := bytes.Buffer{}
-		err := services.ToYaml(&buffer, graph.ServiceConf{
+		Expect(services.ToYaml(&buffer, graph.ServiceConf{
 			WithReachableServices: true,
 			WithNamespace:         false,
 			WithMesh:              true,
 			Namespace:             TestNamespace,
 			Mesh:                  "default",
 			Image:                 "nicholasjackson/fake-service:v0.25.2",
-		})
-		Expect(err).ToNot(HaveOccurred())
+		})).To(Succeed())
 
 		Expect(cluster.Install(YamlK8s(buffer.String()))).To(Succeed())
 
