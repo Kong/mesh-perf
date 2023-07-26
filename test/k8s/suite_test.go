@@ -52,6 +52,9 @@ var _ = BeforeSuite(func() {
 	Eventually(func() error {
 		return framework.PortForwardPrometheusPushgateway(cluster, obsNamespace)
 	}, "30s", "1s").Should(Succeed())
+	Eventually(func() error {
+		return framework.PortForwardPrometheusServer(cluster, obsNamespace)
+	}, "30s", "1s").Should(Succeed())
 })
 
 var _ = AfterSuite(func() {
