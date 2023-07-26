@@ -73,7 +73,7 @@ data:
 			Expect(err).ToNot(HaveOccurred(), "invalid value of TEST_NUM_SERVICES")
 			numServices = i
 		}
-		services := graph.GenerateRandomServiceMesh(time.Now().Unix(), numServices, 50, 1, 1)
+		services := graph.GenerateRandomServiceMesh(GinkgoRandomSeed(), numServices, 50, 1, 1)
 		buffer := bytes.Buffer{}
 		err := services.ToYaml(&buffer, graph.ServiceConf{
 			WithReachableServices: true,
