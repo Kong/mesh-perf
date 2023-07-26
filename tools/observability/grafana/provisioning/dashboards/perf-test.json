@@ -198,7 +198,7 @@
                "legendFormat": "{{result}}"
             }
          ],
-         "title": "Number of Pod reconciliation ",
+         "title": "Number of Pod reconciliation",
          "type": "timeseries"
       },
       {
