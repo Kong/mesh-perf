@@ -20,6 +20,7 @@ import (
 
 func Simple() {
 	var numServices int
+	var instancesPerService int
 	var start time.Time
 
 	BeforeAll(func() {
@@ -37,10 +38,16 @@ func Simple() {
 			Install(NamespaceWithSidecarInjection(TestNamespace)).
 			Setup(cluster)
 		Expect(err).ToNot(HaveOccurred())
+
 		num := requireVar("PERF_TEST_NUM_SERVICES")
 		i, err := strconv.Atoi(num)
 		Expect(err).ToNot(HaveOccurred(), "invalid value of PERF_TEST_NUM_SERVICES")
 		numServices = i
+
+		num = requireVar("PERF_TEST_INSTANCES_PER_SERVICE")
+		i, err = strconv.Atoi(num)
+		Expect(err).ToNot(HaveOccurred(), "invalid value of PERF_TEST_INSTANCES_PER_SERVICE")
+		instancesPerService = i
 	})
 
 	BeforeEach(func() {
@@ -68,7 +75,7 @@ func Simple() {
 	})
 
 	It("should deploy graph", func() {
-		services := graph.GenerateRandomServiceMesh(872835240, numServices, 50, 1, 1)
+		services := graph.GenerateRandomServiceMesh(872835240, numServices, 50, instancesPerService, instancesPerService)
 		buffer := bytes.Buffer{}
 		Expect(services.ToYaml(&buffer, graph.ServiceConf{
 			WithReachableServices: true,
@@ -139,7 +146,7 @@ spec:
 		Eventually(func(g Gomega) {
 			newDeliveryCount, err := XdsDeliveryCount(promClient)
 			g.Expect(err).ToNot(HaveOccurred())
-			g.Expect(newDeliveryCount - deliveryCount).To(Equal(numServices))
+			g.Expect(newDeliveryCount - deliveryCount).To(Equal(numServices * instancesPerService))
 		}, "60s", "1s").Should(Succeed())
 		AddReportEntry("duration", time.Now().Sub(start))
 	})
