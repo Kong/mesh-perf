@@ -12,5 +12,8 @@ fetch-mesh:
 	[ -f $(KUMACTLBIN) ] || (cd build && curl -L https://docs.konghq.com/mesh/installer.sh | VERSION=$(MESH_VERSION) sh -)
 
 .PHONY: run
+run: export PERF_TEST_NUM_SERVICES ?= 5
+run: export PERF_TEST_STABILIZATION_SLEEP ?= 10s
 run: fetch-mesh
-	$(E2E_ENV_VARS) $(GINKGO) ./test/...
+	$(E2E_ENV_VARS) $(GINKGO) --json-report=raw-report.json ./test/...
+	jq '{Parameters: env | with_entries(select(.key | startswith("PERF_TEST"))), Suites: .}' raw-report.json > report.json

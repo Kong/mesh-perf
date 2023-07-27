@@ -19,7 +19,7 @@ import (
 )
 
 func Simple() {
-	numServices := 5
+	var numServices int
 	var start time.Time
 
 	BeforeAll(func() {
@@ -37,11 +37,10 @@ func Simple() {
 			Install(NamespaceWithSidecarInjection(TestNamespace)).
 			Setup(cluster)
 		Expect(err).ToNot(HaveOccurred())
-		if num := os.Getenv("TEST_NUM_SERVICES"); num != "" {
-			i, err := strconv.Atoi(num)
-			Expect(err).ToNot(HaveOccurred(), "invalid value of TEST_NUM_SERVICES")
-			numServices = i
-		}
+		num := requireVar("PERF_TEST_NUM_SERVICES")
+		i, err := strconv.Atoi(num)
+		Expect(err).ToNot(HaveOccurred(), "invalid value of PERF_TEST_NUM_SERVICES")
+		numServices = i
 	})
 
 	BeforeEach(func() {
