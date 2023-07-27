@@ -20,6 +20,8 @@ import (
 
 func Simple() {
 	numServices := 5
+	instancesPerService := 1
+
 	var start time.Time
 
 	BeforeAll(func() {
@@ -41,6 +43,11 @@ func Simple() {
 			i, err := strconv.Atoi(num)
 			Expect(err).ToNot(HaveOccurred(), "invalid value of TEST_NUM_SERVICES")
 			numServices = i
+		}
+		if num := os.Getenv("TEST_INSTANCES_PER_SERVICE"); num != "" {
+			i, err := strconv.Atoi(num)
+			Expect(err).ToNot(HaveOccurred(), "invalid value of TEST_INSTANCES_PER_SERVICE")
+			instancesPerService = i
 		}
 	})
 
@@ -69,7 +76,7 @@ func Simple() {
 	})
 
 	It("should deploy graph", func() {
-		services := graph.GenerateRandomServiceMesh(872835240, numServices, 50, 1, 1)
+		services := graph.GenerateRandomServiceMesh(872835240, numServices, 50, instancesPerService, instancesPerService)
 		buffer := bytes.Buffer{}
 		Expect(services.ToYaml(&buffer, graph.ServiceConf{
 			WithReachableServices: true,
