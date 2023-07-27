@@ -3,6 +3,7 @@ package k8s_test
 import (
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -10,7 +11,9 @@ import (
 	. "github.com/kumahq/kuma/test/framework"
 	obs "github.com/kumahq/kuma/test/framework/deployments/observability"
 	. "github.com/onsi/ginkgo/v2"
+	"github.com/onsi/ginkgo/v2/types"
 	. "github.com/onsi/gomega"
+	"gopkg.in/yaml.v2"
 
 	"github.com/kong/mesh-perf/test/framework"
 )
@@ -74,6 +77,71 @@ var _ = AfterSuite(func() {
 		Expect(framework.SavePrometheusSnapshot(cluster, obsNamespace, promSnapshotsDir)).To(Succeed())
 		Expect(cluster.DeleteDeployment("obs")).To(Succeed())
 	}
+})
+
+type reportEntry struct {
+	Time  string `yaml:"time"`
+	Name  string `yaml:"name"`
+	Value string `yaml:"value"`
+}
+
+type specReport struct {
+	State         string `yaml:"state"`
+	Description   string `yaml:"description"`
+	ReportEntries []reportEntry
+}
+
+type report struct {
+	Parameters       map[string]string `yaml:"parameters"`
+	SuitePath        string            `yaml:"suitePath"`
+	SuiteDescription string            `yaml:"suiteDescription"`
+	SpecReports      []specReport      `yaml:"specReports"`
+}
+
+var _ = ReportAfterSuite("compile report", func(ginkgoReport Report) {
+	parameters := map[string]string{}
+	for _, envKeyVal := range os.Environ() {
+		if strings.HasPrefix(envKeyVal, "PERF_TEST") {
+			assignment := strings.SplitN(envKeyVal, "=", 2)
+			parameters[assignment[0]] = assignment[1]
+		}
+	}
+
+	report := report{
+		Parameters:       parameters,
+		SuitePath:        ginkgoReport.SuitePath,
+		SuiteDescription: ginkgoReport.SuiteDescription,
+	}
+
+	for _, rep := range ginkgoReport.SpecReports {
+		if rep.LeafNodeType != types.NodeTypeIt {
+			continue
+		}
+		specReport := specReport{
+			State:       rep.State.String(),
+			Description: rep.LeafNodeText,
+		}
+		for _, entry := range rep.ReportEntries {
+			specReport.ReportEntries = append(
+				specReport.ReportEntries,
+				reportEntry{
+					Time:  entry.Time.String(),
+					Name:  entry.Name,
+					Value: entry.Value.String(),
+				},
+			)
+		}
+		report.SpecReports = append(
+			report.SpecReports,
+			specReport,
+		)
+	}
+
+	reportBytes, err := yaml.Marshal(report)
+	Expect(err).ToNot(HaveOccurred())
+
+	// this is the directory of this file
+	os.WriteFile("report.yaml", reportBytes, 0666)
 })
 
 var (

@@ -17,4 +17,3 @@ fetch-mesh:
 .PHONY: run
 run: fetch-mesh
 	$(E2E_ENV_VARS) $(GINKGO) --json-report=raw-report.json ./test/...
-	$(E2E_ENV_VARS) jq '{Parameters: env | with_entries(select(.key | startswith("PERF_TEST"))), Suites: .}' raw-report.json > report.json
