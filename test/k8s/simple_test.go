@@ -146,7 +146,7 @@ spec:
 		Eventually(func(g Gomega) {
 			newDeliveryCount, err := XdsDeliveryCount(promClient)
 			g.Expect(err).ToNot(HaveOccurred())
-			g.Expect(newDeliveryCount - deliveryCount).To(Equal(numServices))
+			g.Expect(newDeliveryCount - deliveryCount).To(Equal(numServices * instancesPerService))
 		}, "60s", "1s").Should(Succeed())
 		AddReportEntry("duration", time.Now().Sub(start))
 	})

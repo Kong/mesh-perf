@@ -44,7 +44,7 @@ jobs:
         run: aws eks --region us-west-1 update-kubeconfig --name mesh-perf
       - name: Run tests
         env:
-          MESH_VERSION: ${{ inputs.mesh_version }}
+          PERF_TEST_MESH_VERSION: ${{ inputs.mesh_version }}
           PERF_TEST_STABILIZATION_SLEEP: 30s
           PERF_TEST_NUM_SERVICES: ${{ inputs.num_services }}
           PERF_TEST_INSTANCES_PER_SERVICE: ${{ inputs.instances_per_service }}
