@@ -8,14 +8,12 @@ on:
         type: string
       num_services:
         description: "Number of services to run during testing"
-        required: false
+        required: true
         type: number
-        default: 5
       instances_per_service:
         description: "Number of instances per service to run during testing"
-        required: false
+        required: true
         type: number
-        default: 1
 
 permissions:
   id-token: write
