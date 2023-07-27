@@ -45,9 +45,9 @@ jobs:
       - name: Run tests
         env:
           MESH_VERSION: ${{ inputs.mesh_version }}
-          STABILIZATION_SLEEP: 30s
-          TEST_NUM_SERVICES: ${{ inputs.num_services }}
-          TEST_INSTANCES_PER_SERVICE: ${{ inputs.instances_per_service }}
+          PERF_TEST_STABILIZATION_SLEEP: 30s
+          PERF_TEST_NUM_SERVICES: ${{ inputs.num_services }}
+          PERF_TEST_INSTANCES_PER_SERVICE: ${{ inputs.instances_per_service }}
         run: make run
       - uses: actions/upload-artifact@v3
         with:
