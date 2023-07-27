@@ -26,15 +26,35 @@ g.dashboard.new('Perf Test')
     panels.milliseconds(
       'Pod Startup Time', 
       'Average time between Pod creation and readiness', 
-      queries.avgPodTimeToStart(ds.uid)),
+      [
+        queries.podTimeToStart(ds.uid, "0.50"),
+        queries.podTimeToStart(ds.uid, "0.90"),
+        queries.podTimeToStart(ds.uid, "0.99"),
+      ]),
     panels.seconds(
-      'Latency of Kube API server responses', 
-      'The latency between a request sent from a client and a response returned by kube-apiserver', 
+      'Latency of Kube API server responses',
+      'The latency between a request sent from a client and a response returned by kube-apiserver',
       [
         queries.kubeApiServerRequestLatency(ds.uid, "0.50"),
         queries.kubeApiServerRequestLatency(ds.uid, "0.90"),
         queries.kubeApiServerRequestLatency(ds.uid, "0.99"),
       ]),
+    panels.seconds(
+      'Latency of Pod to Dataplane conversion',
+      'Length of time per reconcile for pod controller',
+      [
+        queries.controllerRuntimeReconcileLatency(ds.uid, "0.50"),
+        queries.controllerRuntimeReconcileLatency(ds.uid, "0.90"),
+        queries.controllerRuntimeReconcileLatency(ds.uid, "0.99"),
+      ]),
+    panels.opsPerSec(
+      'Number of Pod reconciliation',
+      '',
+      queries.controllerRuntimeReconcileRate(ds.uid)),
+    panels.cacheHitMissRatio(
+      'Kube Auth cache performance',
+      'Number of cache operations for Kubernetes authentication on XDS connection',
+      queries.kubeAuthCache(ds.uid)),
   ]),
   
   row.new('Kuma Control Plane')

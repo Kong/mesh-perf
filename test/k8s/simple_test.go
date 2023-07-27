@@ -19,9 +19,8 @@ import (
 )
 
 func Simple() {
-	numServices := 5
-	instancesPerService := 1
-
+	var numServices int
+	var instancesPerService int
 	var start time.Time
 
 	BeforeAll(func() {
@@ -39,16 +38,16 @@ func Simple() {
 			Install(NamespaceWithSidecarInjection(TestNamespace)).
 			Setup(cluster)
 		Expect(err).ToNot(HaveOccurred())
-		if num := os.Getenv("TEST_NUM_SERVICES"); num != "" {
-			i, err := strconv.Atoi(num)
-			Expect(err).ToNot(HaveOccurred(), "invalid value of TEST_NUM_SERVICES")
-			numServices = i
-		}
-		if num := os.Getenv("TEST_INSTANCES_PER_SERVICE"); num != "" {
-			i, err := strconv.Atoi(num)
-			Expect(err).ToNot(HaveOccurred(), "invalid value of TEST_INSTANCES_PER_SERVICE")
-			instancesPerService = i
-		}
+
+		num := requireVar("PERF_TEST_NUM_SERVICES")
+		i, err := strconv.Atoi(num)
+		Expect(err).ToNot(HaveOccurred(), "invalid value of PERF_TEST_NUM_SERVICES")
+		numServices = i
+
+		num = requireVar("PERF_TEST_INSTANCES_PER_SERVICE")
+		i, err = strconv.Atoi(num)
+		Expect(err).ToNot(HaveOccurred(), "invalid value of PERF_TEST_INSTANCES_PER_SERVICE")
+		instancesPerService = i
 	})
 
 	BeforeEach(func() {

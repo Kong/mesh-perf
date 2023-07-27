@@ -1,6 +1,7 @@
 package k8s_test
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -19,9 +20,18 @@ func TestE2E(t *testing.T) {
 }
 
 var cluster *K8sCluster
-var stabilizationSleep = 10 * time.Second
+var stabilizationSleep time.Duration
 
 const obsNamespace = "mesh-observability"
+
+func requireVar(key string) string {
+	val, ok := os.LookupEnv(key)
+	if !ok {
+		panic(fmt.Sprintf("couldn't lookup value %s", key))
+	}
+
+	return val
+}
 
 var _ = BeforeSuite(func() {
 	kubeConfigPath := os.Getenv("KUBECONFIG")
@@ -29,23 +39,21 @@ var _ = BeforeSuite(func() {
 		kubeConfigPath = "${HOME}/.kube/config"
 	}
 
-	if sleep := os.Getenv("STABILIZATION_SLEEP"); sleep != "" {
-		sleepDur, err := time.ParseDuration(sleep)
-		if err != nil {
-			panic(err)
-		}
-		stabilizationSleep = sleepDur
+	sleep := requireVar("PERF_TEST_STABILIZATION_SLEEP")
+	sleepDur, err := time.ParseDuration(sleep)
+	if err != nil {
+		panic(err)
 	}
+	stabilizationSleep = sleepDur
 
 	cluster = NewK8sCluster(NewTestingT(), "mesh-perf", true)
 
 	cluster.WithKubeConfig(os.ExpandEnv(kubeConfigPath))
-	err := cluster.Install(obs.Install(
+	Expect(cluster.Install(obs.Install(
 		"obs",
 		obs.WithNamespace(obsNamespace),
 		obs.WithComponents(obs.PrometheusComponent, obs.GrafanaComponent),
-	))
-	Expect(err).ToNot(HaveOccurred())
+	))).To(Succeed())
 	Expect(framework.EnablePrometheusAdminAPI(obsNamespace, cluster)).To(Succeed())
 
 	Expect(framework.InstallPrometheusPushgateway(cluster, obsNamespace))
@@ -62,8 +70,10 @@ var _ = AfterSuite(func() {
 	if promSnapshotsDir == "" {
 		promSnapshotsDir = "/tmp/prom-snapshots"
 	}
-	Expect(framework.SavePrometheusSnapshot(cluster, obsNamespace, promSnapshotsDir)).To(Succeed())
-	Expect(cluster.DeleteDeployment("obs")).To(Succeed())
+	if cluster != nil {
+		Expect(framework.SavePrometheusSnapshot(cluster, obsNamespace, promSnapshotsDir)).To(Succeed())
+		Expect(cluster.DeleteDeployment("obs")).To(Succeed())
+	}
 })
 
 var (
