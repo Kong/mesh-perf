@@ -9,7 +9,7 @@ import (
 )
 
 type reportEntry struct {
-	Time  string `yaml:"time"`
+	Time  int64  `yaml:"time"`
 	Name  string `yaml:"name"`
 	Value string `yaml:"value"`
 }
@@ -54,7 +54,7 @@ func makeReport(ginkgoReport ginkgo.Report) report {
 			specReport.ReportEntries = append(
 				specReport.ReportEntries,
 				reportEntry{
-					Time:  entry.Time.String(),
+					Time:  entry.Time.Unix(),
 					Name:  entry.Name,
 					Value: entry.Value.String(),
 				},
