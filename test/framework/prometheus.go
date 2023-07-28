@@ -69,7 +69,7 @@ func SavePrometheusSnapshot(cluster framework.Cluster, namespace string, hostPat
 	err = k8s.RunKubectlE(
 		cluster.GetTesting(),
 		cluster.GetKubectlOptions(),
-		"cp", src, dest, "-c", "prometheus-server",
+		"cp", src, dest, "-c", "prometheus-server", "--retries", "10",
 	)
 	if err != nil {
 		return err
