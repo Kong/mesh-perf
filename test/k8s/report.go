@@ -48,7 +48,7 @@ func makeReport(ginkgoReport ginkgo.Report) report {
 		}
 		specReport := specReport{
 			State:       rep.State.String(),
-			Description: rep.LeafNodeText,
+			Description: rep.FullText(),
 		}
 		for _, entry := range rep.ReportEntries {
 			specReport.ReportEntries = append(
