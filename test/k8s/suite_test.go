@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 	"testing"
 	"time"
 
@@ -88,7 +89,11 @@ var _ = ReportAfterSuite("compile report", func(ginkgoReport Report) {
 	if reportDir == "" {
 		reportDir = "/tmp/perf-test-reports"
 	}
-	os.WriteFile(path.Join(reportDir, "report.yaml"), reportBytes, 0666)
+	root := requireVar("TEST_ROOT")
+	relativeSuitePath := strings.TrimPrefix("/", strings.TrimPrefix(report.SuitePath, root))
+	fileName := fmt.Sprintf("%s.yaml", strings.ReplaceAll(relativeSuitePath, "/", "_"))
+	Expect(os.MkdirAll(reportDir, os.ModePerm))
+	Expect(os.WriteFile(path.Join(reportDir, fileName), reportBytes, 0666)).To(Succeed())
 })
 
 var (
