@@ -3,6 +3,8 @@ package k8s_test
 import (
 	"fmt"
 	"os"
+	"path"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,6 +13,7 @@ import (
 	obs "github.com/kumahq/kuma/test/framework/deployments/observability"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"gopkg.in/yaml.v2"
 
 	"github.com/kong/mesh-perf/test/framework"
 )
@@ -74,6 +77,23 @@ var _ = AfterSuite(func() {
 		Expect(framework.SavePrometheusSnapshot(cluster, obsNamespace, promSnapshotsDir)).To(Succeed())
 		Expect(cluster.DeleteDeployment("obs")).To(Succeed())
 	}
+})
+
+var _ = ReportAfterSuite("compile report", func(ginkgoReport Report) {
+	report := makeReport(ginkgoReport)
+
+	reportBytes, err := yaml.Marshal(report)
+	Expect(err).ToNot(HaveOccurred())
+
+	reportDir := os.Getenv("REPORT_DIR")
+	if reportDir == "" {
+		reportDir = "/tmp/perf-test-reports"
+	}
+	root := requireVar("TEST_ROOT")
+	relativeSuitePath := strings.TrimPrefix("/", strings.TrimPrefix(report.SuitePath, root))
+	fileName := fmt.Sprintf("%s.yaml", strings.ReplaceAll(relativeSuitePath, "/", "_"))
+	Expect(os.MkdirAll(reportDir, os.ModePerm))
+	Expect(os.WriteFile(path.Join(reportDir, fileName), reportBytes, 0666)).To(Succeed())
 })
 
 var (
