@@ -100,7 +100,7 @@ func Simple() {
 				defer wg.Done()
 				err := NewClusterSetup().
 					Install(WaitService(TestNamespace, name)).
-					Install(WaitNumPods(TestNamespace, 1, name)).
+					Install(WaitNumPods(TestNamespace, instancesPerService, name)).
 					Install(WaitPodsAvailable(TestNamespace, name)).
 					Setup(cluster)
 				Expect(err).ToNot(HaveOccurred())
