@@ -12,8 +12,11 @@ import (
 	"github.com/kumahq/kuma-tools/graph"
 	"github.com/kumahq/kuma/pkg/config/core"
 	. "github.com/kumahq/kuma/test/framework"
+	"github.com/kumahq/kuma/test/framework/envoy_admin"
+	"github.com/kumahq/kuma/test/framework/envoy_admin/tunnel"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	. "github.com/kong/mesh-perf/test/framework"
 )
@@ -79,6 +82,7 @@ func Simple() {
 		buffer := bytes.Buffer{}
 		Expect(services.ToYaml(&buffer, graph.ServiceConf{
 			WithReachableServices: true,
+			WithGenerator:         true,
 			WithNamespace:         false,
 			WithMesh:              true,
 			Namespace:             TestNamespace,
@@ -152,34 +156,52 @@ spec:
 	})
 
 	Context("scaling", func() {
+		var admin envoy_admin.Tunnel
+
+		BeforeAll(func() {
+			pod := k8s.ListPods(
+				cluster.GetTesting(),
+				cluster.GetKubectlOptions(TestNamespace),
+				metav1.ListOptions{
+					LabelSelector: "app=fake-client",
+				},
+			)[0]
+			tnl := k8s.NewTunnel(cluster.GetKubectlOptions(TestNamespace), k8s.ResourceTypePod, pod.Name, 0, 9901)
+			Expect(tnl.ForwardPortE(cluster.GetTesting())).To(Succeed())
+			admin = tunnel.NewK8sEnvoyAdminTunnel(cluster.GetTesting(), tnl.Endpoint())
+		})
+
+		srv := "srv-000"
 		scale := func(replicas int) {
 			err := k8s.RunKubectlE(
 				cluster.GetTesting(),
 				cluster.GetKubectlOptions(TestNamespace),
-				"scale", "statefulset", "srv-000", fmt.Sprintf("--replicas=%d", replicas),
+				"scale", "statefulset", srv, fmt.Sprintf("--replicas=%d", replicas),
 			)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = cluster.Install(WaitNumPods(TestNamespace, replicas, "srv-000"))
+			err = cluster.Install(WaitNumPods(TestNamespace, replicas, srv))
 			Expect(err).ToNot(HaveOccurred())
+			start := time.Now()
+			Eventually(func(g Gomega) {
+				membership, err := admin.GetStats(fmt.Sprintf("cluster.%s_kuma-test_svc_80.membership_total", srv))
+				g.Expect(err).ToNot(HaveOccurred())
+				g.Expect(membership.Stats[0].Value).To(BeNumerically("==", replicas))
+			}, "60s", "1s").Should(Succeed())
+			AddReportEntry("duration", time.Now().Sub(start))
 		}
 
 		It("should scale up a service", func() {
-			start := time.Now()
 			scale(2)
-			// there is no straightforward way to check if all Envoys received the config with the new endpoint, therefore we need to rely on stabilization sleep
-			AddReportEntry("duration", time.Now().Sub(start))
 		})
 
 		It("should scale down a service", func() {
-			start := time.Now()
 			scale(1)
-			// there is no straightforward way to check if all Envoys received the config without the removed endpoint, therefore we need to rely on stabilization sleep
-			AddReportEntry("duration", time.Now().Sub(start))
 		})
 	})
 
 	It("should distribute certs when mTLS is enabled", func() {
+		expectedCerts := numServices + 1
 		Expect(cluster.Install(MTLSMeshKubernetes("default"))).To(Succeed())
 
 		start := time.Now()
@@ -190,7 +212,7 @@ spec:
 				"get", "meshinsights", "default", "-ojsonpath='{.spec.mTLS.issuedBackends.ca-1.total}'",
 			)
 			g.Expect(err).ToNot(HaveOccurred())
-			g.Expect(out).To(Equal(fmt.Sprintf("'%d'", numServices)))
+			g.Expect(out).To(Equal(fmt.Sprintf("'%d'", expectedCerts)))
 		}, "60s", "1s").Should(Succeed())
 		AddReportEntry("duration", time.Now().Sub(start))
 	})
