@@ -42,6 +42,7 @@ var _ = BeforeSuite(func() {
 		kubeConfigPath = "${HOME}/.kube/config"
 	}
 
+	_ = requireVar("KMESH_LICENSE")
 	sleep := requireVar("PERF_TEST_STABILIZATION_SLEEP")
 	sleepDur, err := time.ParseDuration(sleep)
 	if err != nil {
