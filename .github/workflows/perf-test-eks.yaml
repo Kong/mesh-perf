@@ -48,6 +48,8 @@ jobs:
           PERF_TEST_STABILIZATION_SLEEP: 30s
           PERF_TEST_NUM_SERVICES: ${{ inputs.num_services }}
           PERF_TEST_INSTANCES_PER_SERVICE: ${{ inputs.instances_per_service }}
+          KMESH_LICENSE: |
+            ${{ secrets.KMESH_LICENSE }}
         run: make run
       - uses: actions/upload-artifact@v3
         with:
