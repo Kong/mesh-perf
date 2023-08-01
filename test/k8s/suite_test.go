@@ -27,6 +27,8 @@ var stabilizationSleep time.Duration
 
 const obsNamespace = "mesh-observability"
 
+var kmeshLicense string
+
 func requireVar(key string) string {
 	val, ok := os.LookupEnv(key)
 	if !ok {
@@ -42,7 +44,7 @@ var _ = BeforeSuite(func() {
 		kubeConfigPath = "${HOME}/.kube/config"
 	}
 
-	_ = requireVar("KMESH_LICENSE")
+	kmeshLicense = requireVar("KMESH_LICENSE")
 	sleep := requireVar("PERF_TEST_STABILIZATION_SLEEP")
 	sleepDur, err := time.ParseDuration(sleep)
 	if err != nil {

@@ -28,10 +28,9 @@ func Simple() {
 	BeforeAll(func() {
 		opts := []KumaDeploymentOption{}
 
-		license := requireVar("KMESH_LICENSE")
 		opts = append(opts,
 			WithCtlOpts(map[string]string{
-				"--license-path": license,
+				"--license-path": kmeshLicense,
 			}))
 
 		err := NewClusterSetup().
