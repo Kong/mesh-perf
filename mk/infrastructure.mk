@@ -4,6 +4,7 @@ ifeq ($(ENV),eks)
 TERRAFORM_VARS += -var="nodes_number=$${EKS_NUM_OF_NODES:=3}"
 endif
 
+.PHONY: number-of-nodes
 number-of-nodes:
 	@$(E2E_ENV_VARS) go run tools/eksformula/main.go
 
