@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
@@ -26,7 +25,14 @@ func Simple() {
 	var start time.Time
 
 	BeforeAll(func() {
-		opts := []KumaDeploymentOption{}
+		opts := []KumaDeploymentOption{
+			WithCtlOpts(map[string]string{
+				"--set": "" +
+					"kuma.controlPlane.resources.requests.cpu=1," +
+					"kuma.controlPlane.resources.requests.memory=2Gi," +
+					"kuma.controlPlane.resources.limits.memory=8Gi",
+			}),
+		}
 
 		opts = append(opts,
 			WithCtlOpts(map[string]string{
@@ -89,25 +95,11 @@ func Simple() {
 
 		Expect(cluster.Install(YamlK8s(buffer.String()))).To(Succeed())
 
-		wg := sync.WaitGroup{}
-		wg.Add(numServices)
-
-		start := time.Now()
-
-		for i := 0; i < numServices; i++ {
-			name := fmt.Sprintf("srv-%03d", i)
-			go func() {
-				defer GinkgoRecover()
-				defer wg.Done()
-				err := NewClusterSetup().
-					Install(WaitService(TestNamespace, name)).
-					Install(WaitNumPods(TestNamespace, instancesPerService, name)).
-					Install(WaitPodsAvailable(TestNamespace, name)).
-					Setup(cluster)
-				Expect(err).ToNot(HaveOccurred())
-			}()
-		}
-		wg.Wait()
+		Eventually(func() error {
+			expectedNumOfPods := numServices*instancesPerService + 1
+			return k8s.WaitUntilNumPodsCreatedE(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace),
+				metav1.ListOptions{}, expectedNumOfPods, 1, 0)
+		}, "10m", "3s").Should(Succeed())
 
 		AddReportEntry("duration", time.Now().Sub(start))
 	})
@@ -189,16 +181,16 @@ spec:
 		}
 
 		It("should scale up a service", func() {
-			scale(2)
+			scale(instancesPerService + 1)
 		})
 
 		It("should scale down a service", func() {
-			scale(1)
+			scale(instancesPerService)
 		})
 	})
 
 	It("should distribute certs when mTLS is enabled", func() {
-		expectedCerts := numServices + 1
+		expectedCerts := numServices*instancesPerService + 1
 		Expect(cluster.Install(MTLSMeshKubernetes("default"))).To(Succeed())
 
 		start := time.Now()
