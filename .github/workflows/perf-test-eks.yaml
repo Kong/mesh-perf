@@ -22,6 +22,9 @@ permissions:
 jobs:
   perf-test:
     runs-on: ubuntu-latest
+    env:
+      PERF_TEST_NUM_SERVICES: ${{ inputs.num_services }}
+      PERF_TEST_INSTANCES_PER_SERVICE: ${{ inputs.instances_per_service }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -38,16 +41,17 @@ jobs:
           cache-dependency-path: go.sum
       - name: make dev/tools
         run: make dev/tools
+      - name: Calculate number of nodes for cluster
+        run:
+          echo "EKS_NUM_OF_NODES=$(make number-of-nodes)" >> $GITHUB_ENV
       - name: Start cluster
         run: ENV=eks make start-cluster
       - name: Configure kubectl
         run: aws eks --region us-west-1 update-kubeconfig --name mesh-perf
       - name: Run tests
         env:
-          PERF_TEST_MESH_VERSION: ${{ inputs.mesh_version }}
           PERF_TEST_STABILIZATION_SLEEP: 30s
           PERF_TEST_NUM_SERVICES: ${{ inputs.num_services }}
-          PERF_TEST_INSTANCES_PER_SERVICE: ${{ inputs.instances_per_service }}
           KMESH_LICENSE_JSON: |
             ${{ secrets.KMESH_LICENSE_JSON }}
         run: |

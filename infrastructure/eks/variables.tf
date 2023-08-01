@@ -11,12 +11,11 @@ variable "cluster_name" {
 
 variable "nodes_number" {
   type = number
-  default = 3
 }
 
 variable "nodes_type" {
   type = string
-  default = "t3.medium"
+  default = "t4g.2xlarge"
 }
 
 variable "availability_zones" {
