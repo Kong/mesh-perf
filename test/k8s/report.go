@@ -9,22 +9,22 @@ import (
 )
 
 type reportEntry struct {
-	Time  int64  `yaml:"time"`
-	Name  string `yaml:"name"`
-	Value string `yaml:"value"`
+	Time  int64  `json:"time"`
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type specReport struct {
-	State         string `yaml:"state"`
-	Description   string `yaml:"description"`
+	State         string `json:"state"`
+	Description   string `json:"description"`
 	ReportEntries []reportEntry
 }
 
 type report struct {
-	Parameters       map[string]string `yaml:"parameters"`
-	SuitePath        string            `yaml:"suitePath"`
-	SuiteDescription string            `yaml:"suiteDescription"`
-	SpecReports      []specReport      `yaml:"specReports"`
+	Parameters       map[string]string `json:"parameters"`
+	SuitePath        string            `json:"suitePath"`
+	SuiteDescription string            `json:"suiteDescription"`
+	SpecReports      []specReport      `json:"specReports"`
 }
 
 func makeReport(ginkgoReport ginkgo.Report) report {

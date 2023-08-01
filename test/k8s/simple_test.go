@@ -3,7 +3,6 @@ package k8s_test
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -29,12 +28,10 @@ func Simple() {
 	BeforeAll(func() {
 		opts := []KumaDeploymentOption{}
 
-		if license := os.Getenv("KMESH_LICENSE"); license != "" {
-			opts = append(opts,
-				WithCtlOpts(map[string]string{
-					"--license-path": license,
-				}))
-		}
+		opts = append(opts,
+			WithCtlOpts(map[string]string{
+				"--license-path": kmeshLicense,
+			}))
 
 		err := NewClusterSetup().
 			Install(Kuma(core.Standalone, opts...)).

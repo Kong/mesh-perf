@@ -59,6 +59,12 @@ jobs:
         with:
           name: test-reports
           path: /tmp/perf-test-reports
+      - name: submit logs to Datadog
+        env:
+          DD_API_KEY: ${{ secrets.DD_API_KEY }}
+          DD_APP_KEY: ${{ secrets.DD_APP_KEY }}
+        run: |
+          go run ./tools/reports/main.go /tmp/perf-test-reports/*
       - name: Destroy cluster
         if: always()
         run: ENV=eks make destroy-cluster

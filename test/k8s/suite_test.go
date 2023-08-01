@@ -1,6 +1,7 @@
 package k8s_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path"
@@ -13,7 +14,6 @@ import (
 	obs "github.com/kumahq/kuma/test/framework/deployments/observability"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"gopkg.in/yaml.v2"
 
 	"github.com/kong/mesh-perf/test/framework"
 )
@@ -26,6 +26,8 @@ var cluster *K8sCluster
 var stabilizationSleep time.Duration
 
 const obsNamespace = "mesh-observability"
+
+var kmeshLicense string
 
 func requireVar(key string) string {
 	val, ok := os.LookupEnv(key)
@@ -42,6 +44,7 @@ var _ = BeforeSuite(func() {
 		kubeConfigPath = "${HOME}/.kube/config"
 	}
 
+	kmeshLicense = requireVar("KMESH_LICENSE")
 	sleep := requireVar("PERF_TEST_STABILIZATION_SLEEP")
 	sleepDur, err := time.ParseDuration(sleep)
 	if err != nil {
@@ -82,7 +85,7 @@ var _ = AfterSuite(func() {
 var _ = ReportAfterSuite("compile report", func(ginkgoReport Report) {
 	report := makeReport(ginkgoReport)
 
-	reportBytes, err := yaml.Marshal(report)
+	reportBytes, err := json.Marshal(report)
 	Expect(err).ToNot(HaveOccurred())
 
 	reportDir := os.Getenv("REPORT_DIR")
@@ -90,8 +93,8 @@ var _ = ReportAfterSuite("compile report", func(ginkgoReport Report) {
 		reportDir = "/tmp/perf-test-reports"
 	}
 	root := requireVar("TEST_ROOT")
-	relativeSuitePath := strings.TrimPrefix("/", strings.TrimPrefix(report.SuitePath, root))
-	fileName := fmt.Sprintf("%s.yaml", strings.ReplaceAll(relativeSuitePath, "/", "_"))
+	relativeSuitePath := strings.TrimPrefix(strings.TrimPrefix(report.SuitePath, root), "/")
+	fileName := fmt.Sprintf("%s.json", strings.ReplaceAll(relativeSuitePath, "/", "_"))
 	Expect(os.MkdirAll(reportDir, os.ModePerm))
 	Expect(os.WriteFile(path.Join(reportDir, fileName), reportBytes, 0666)).To(Succeed())
 })
