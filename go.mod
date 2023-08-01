@@ -3,7 +3,9 @@ module github.com/kong/mesh-perf
 go 1.20
 
 require (
+	github.com/DataDog/datadog-api-client-go/v2 v2.15.0
 	github.com/go-errors/errors v1.4.2
+	github.com/go-logr/stdr v1.2.2
 	github.com/gruntwork-io/terratest v0.41.15
 	github.com/kumahq/kuma v0.0.0-20230717095426-746dc0de4d15
 	github.com/kumahq/kuma-tools v0.0.3-0.20230727092449-c9a6c29d9b46
@@ -15,6 +17,7 @@ require (
 )
 
 require (
+	github.com/DataDog/zstd v1.5.2 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Nordix/simple-ipam v1.0.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
@@ -33,7 +36,6 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
-	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-logr/zapr v1.2.4 // indirect
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/jsonreference v0.20.1 // indirect
@@ -41,6 +43,7 @@ require (
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/goburrow/cache v0.1.4 // indirect
+	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
