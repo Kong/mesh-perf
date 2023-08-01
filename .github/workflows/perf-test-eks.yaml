@@ -57,14 +57,17 @@ jobs:
         run: |
           KMESH_LICENSE=<(printenv KMESH_LICENSE_JSON) make run
       - uses: actions/upload-artifact@v3
+        if: always()
         with:
           name: test-metrics-snapshot
           path: /tmp/prom-snapshots
       - uses: actions/upload-artifact@v3
+        if: always()
         with:
           name: test-reports
           path: /tmp/perf-test-reports
       - name: submit logs to Datadog
+        if: always()
         env:
           DD_API_KEY: ${{ secrets.DD_API_KEY }}
           DD_APP_KEY: ${{ secrets.DD_APP_KEY }}
