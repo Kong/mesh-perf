@@ -8,7 +8,7 @@ require (
 	github.com/go-logr/stdr v1.2.2
 	github.com/gruntwork-io/terratest v0.41.15
 	github.com/kumahq/kuma v0.0.0-20230717095426-746dc0de4d15
-	github.com/kumahq/kuma-tools v0.0.3-0.20230727092449-c9a6c29d9b46
+	github.com/kumahq/kuma-tools v0.0.3-0.20230802104244-bb532a92c41c
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.8
 	github.com/prometheus/client_golang v1.16.0
@@ -135,5 +135,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace github.com/kumahq/kuma-tools => ../../kumahq/kuma-tools
