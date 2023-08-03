@@ -24,6 +24,8 @@ func Simple() {
 	var instancesPerService int
 	var start time.Time
 
+	var svcGraph graph.Services
+
 	BeforeAll(func() {
 		opts := []KumaDeploymentOption{
 			WithCtlOpts(map[string]string{
@@ -54,6 +56,8 @@ func Simple() {
 		i, err = strconv.Atoi(num)
 		Expect(err).ToNot(HaveOccurred(), "invalid value of PERF_TEST_INSTANCES_PER_SERVICE")
 		instancesPerService = i
+
+		svcGraph = graph.GenerateRandomServiceMesh(872835240, numServices, 50, instancesPerService, instancesPerService)
 	})
 
 	BeforeEach(func() {
@@ -81,11 +85,9 @@ func Simple() {
 	})
 
 	It("should deploy graph", func() {
-		services := graph.GenerateRandomServiceMesh(872835240, numServices, 50, instancesPerService, instancesPerService)
 		buffer := bytes.Buffer{}
-		Expect(services.ToYaml(&buffer, graph.ServiceConf{
+		Expect(svcGraph.ToYaml(&buffer, graph.ServiceConf{
 			WithReachableServices: true,
-			WithGenerator:         true,
 			WithNamespace:         false,
 			WithMesh:              true,
 			Namespace:             TestNamespace,
@@ -96,7 +98,7 @@ func Simple() {
 		Expect(cluster.Install(YamlK8s(buffer.String()))).To(Succeed())
 
 		Eventually(func() error {
-			expectedNumOfPods := numServices*instancesPerService + 1
+			expectedNumOfPods := numServices * instancesPerService
 			return k8s.WaitUntilNumPodsCreatedE(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace),
 				metav1.ListOptions{}, expectedNumOfPods, 1, 0)
 		}, "10m", "3s").Should(Succeed())
@@ -147,12 +149,22 @@ spec:
 	Context("scaling", func() {
 		var admin envoy_admin.Tunnel
 
+		var observer string
+		var observable string
+
 		BeforeAll(func() {
+			// finding a service for scaling (observable) and a service to observe the scale (observer)
+			for _, svc := range svcGraph {
+				if len(svc.Edges) != 0 {
+					observer = graph.ToName(svc.Idx)
+					observable = graph.ToName(svc.Edges[0])
+				}
+			}
 			pod := k8s.ListPods(
 				cluster.GetTesting(),
 				cluster.GetKubectlOptions(TestNamespace),
 				metav1.ListOptions{
-					LabelSelector: "app=fake-client",
+					LabelSelector: fmt.Sprintf("app=%s", observer),
 				},
 			)[0]
 			tnl := k8s.NewTunnel(cluster.GetKubectlOptions(TestNamespace), k8s.ResourceTypePod, pod.Name, 0, 9901)
@@ -160,20 +172,19 @@ spec:
 			admin = tunnel.NewK8sEnvoyAdminTunnel(cluster.GetTesting(), tnl.Endpoint())
 		})
 
-		srv := "srv-000"
 		scale := func(replicas int) {
 			err := k8s.RunKubectlE(
 				cluster.GetTesting(),
 				cluster.GetKubectlOptions(TestNamespace),
-				"scale", "statefulset", srv, fmt.Sprintf("--replicas=%d", replicas),
+				"scale", "statefulset", observable, fmt.Sprintf("--replicas=%d", replicas),
 			)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = cluster.Install(WaitNumPods(TestNamespace, replicas, srv))
+			err = cluster.Install(WaitNumPods(TestNamespace, replicas, observable))
 			Expect(err).ToNot(HaveOccurred())
 			start := time.Now()
 			Eventually(func(g Gomega) {
-				membership, err := admin.GetStats(fmt.Sprintf("cluster.%s_kuma-test_svc_80.membership_total", srv))
+				membership, err := admin.GetStats(fmt.Sprintf("cluster.%s_kuma-test_svc_80.membership_total", observable))
 				g.Expect(err).ToNot(HaveOccurred())
 				g.Expect(membership.Stats[0].Value).To(BeNumerically("==", replicas))
 			}, "60s", "1s").Should(Succeed())
@@ -190,7 +201,7 @@ spec:
 	})
 
 	It("should distribute certs when mTLS is enabled", func() {
-		expectedCerts := numServices*instancesPerService + 1
+		expectedCerts := numServices * instancesPerService
 		Expect(cluster.Install(MTLSMeshKubernetes("default"))).To(Succeed())
 
 		start := time.Now()
