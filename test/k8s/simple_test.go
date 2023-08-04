@@ -70,7 +70,32 @@ func Simple() {
 	})
 
 	AfterEach(func() {
-		time.Sleep(stabilizationSleep)
+		endpoint := cluster.GetPortForward("prometheus-server").ApiServerEndpoint
+		promClient, err := NewPromClient(fmt.Sprintf("http://%s", endpoint))
+		Expect(err).ToNot(HaveOccurred())
+
+		stopCh := make(chan struct{})
+		metricCh := make(chan int)
+		errCh := make(chan error)
+
+		go WatchXdsDeliveryCount(promClient, stopCh, metricCh, errCh)
+		defer close(stopCh)
+
+		s := time.Now()
+	Loop:
+		for {
+			select {
+			case <-metricCh:
+				fmt.Fprintln(GinkgoWriter, "reset sleep")
+			case err := <-errCh:
+				Fail(err.Error())
+			case <-time.After(stabilizationSleep):
+				break Loop
+			}
+		}
+
+		fmt.Fprintln(GinkgoWriter, "stabilization sleep took", time.Now().Sub(s))
+
 		Expect(ReportSpecEnd(cluster)).To(Succeed())
 		end := time.Now()
 		AddReportEntry("spec.end", end)
