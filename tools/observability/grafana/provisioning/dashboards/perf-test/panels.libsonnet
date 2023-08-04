@@ -26,5 +26,11 @@ local timeSeries = g.panel.timeSeries;
     + timeSeries.withDescription(desc)
     + timeSeries.queryOptions.withTargets(targets)
     + timeSeries.fieldConfig.defaults.custom.withStacking({mode: 'percent'})
-    + timeSeries.fieldConfig.defaults.custom.withFillOpacity(25)
+    + timeSeries.fieldConfig.defaults.custom.withFillOpacity(25),
+
+  percent(title, desc, targets):
+    timeSeries.new(title)
+    + timeSeries.withDescription(desc)
+    + timeSeries.queryOptions.withTargets(targets)
+    + timeSeries.standardOptions.withUnit('percentunit'),
 }
