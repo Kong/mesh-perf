@@ -119,6 +119,13 @@ g.dashboard.new('Perf Test')
       Refer to https://kuma.io/docs/latest/documentation/fine-tuning/#snapshot-generation
 |||,
       queries.kumaMeshCache(ds.uid)),
-  ])
-  
+  ]),
+
+  row.new('Resource Utilization')
+  + row.withPanels([
+    panels.percent(
+      'Memory',
+      'Memory utilization by the Kuma CP',
+      queries.kubeMemUtilization(ds.uid)),
+  ]),
 ]))

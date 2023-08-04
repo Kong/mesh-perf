@@ -68,4 +68,8 @@ local pq = g.query.prometheus;
       'sum by (result) (rate(controller_runtime_reconcile_total{controller="pod"}[$__rate_interval]))'
     ) + pq.withLegendFormat('{{result}}'),
 
+  kubeMemUtilization(ds):
+    pq.new(ds,
+      'container_memory_working_set_bytes{namespace="kong-mesh-system",container="control-plane"} / container_spec_memory_limit_bytes'
+    ) + pq.withLegendFormat('control-plane')
 }

@@ -539,6 +539,50 @@
          ],
          "title": "Mesh resources hash cache performance",
          "type": "timeseries"
+      },
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 24,
+            "x": 0,
+            "y": 46
+         },
+         "id": 16,
+         "panels": [ ],
+         "title": "Resource Utilization",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Memory utilization by the Kuma CP",
+         "fieldConfig": {
+            "defaults": {
+               "unit": "percentunit"
+            }
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 8,
+            "x": 0,
+            "y": 47
+         },
+         "id": 17,
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "Prometheus"
+               },
+               "expr": "container_memory_working_set_bytes{namespace=\"kong-mesh-system\",container=\"control-plane\"} / container_spec_memory_limit_bytes",
+               "legendFormat": "control-plane"
+            }
+         ],
+         "title": "Memory",
+         "type": "timeseries"
       }
    ],
    "schemaVersion": 36,
