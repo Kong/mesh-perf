@@ -1,7 +1,7 @@
 TOP = $(shell pwd)
 
 # Possible to use Kong Mesh version in the following format 0.0.0-preview.v964544ae9
-PERF_TEST_MESH_VERSION ?= 0.0.0-preview.v4798d5f9f
+PERF_TEST_MESH_VERSION ?= 0.0.0-preview.v3a8515570
 
 include mk/dev.mk
 include mk/check.mk

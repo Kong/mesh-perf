@@ -33,6 +33,9 @@ func Simple() {
 					"kuma.controlPlane.resources.requests.cpu=1," +
 					"kuma.controlPlane.resources.requests.memory=2Gi," +
 					"kuma.controlPlane.resources.limits.memory=8Gi",
+				"--env-var": "" +
+					"KUMA_RUNTIME_KUBERNETES_LEADER_ELECTION_LEASE_DURATION=100s," +
+					"KUMA_RUNTIME_KUBERNETES_LEADER_ELECTION_RENEW_DEADLINE=80s",
 			}),
 		}
 
