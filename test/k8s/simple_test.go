@@ -81,20 +81,16 @@ func Simple() {
 		go WatchXdsDeliveryCount(promClient, stopCh, metricCh, errCh)
 		defer close(stopCh)
 
-		s := time.Now()
 	Loop:
 		for {
 			select {
 			case <-metricCh:
-				fmt.Fprintln(GinkgoWriter, "reset sleep")
 			case err := <-errCh:
 				Fail(err.Error())
 			case <-time.After(stabilizationSleep):
 				break Loop
 			}
 		}
-
-		fmt.Fprintln(GinkgoWriter, "stabilization sleep took", time.Now().Sub(s))
 
 		Expect(ReportSpecEnd(cluster)).To(Succeed())
 		end := time.Now()
