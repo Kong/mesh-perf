@@ -70,7 +70,28 @@ func Simple() {
 	})
 
 	AfterEach(func() {
-		time.Sleep(stabilizationSleep)
+		endpoint := cluster.GetPortForward("prometheus-server").ApiServerEndpoint
+		promClient, err := NewPromClient(fmt.Sprintf("http://%s", endpoint))
+		Expect(err).ToNot(HaveOccurred())
+
+		stopCh := make(chan struct{})
+		metricCh := make(chan int)
+		errCh := make(chan error)
+
+		go WatchXdsDeliveryCount(promClient, stopCh, metricCh, errCh)
+		defer close(stopCh)
+
+	Loop:
+		for {
+			select {
+			case <-metricCh:
+			case err := <-errCh:
+				Fail(err.Error())
+			case <-time.After(stabilizationSleep):
+				break Loop
+			}
+		}
+
 		Expect(ReportSpecEnd(cluster)).To(Succeed())
 		end := time.Now()
 		AddReportEntry("spec.end", end)
