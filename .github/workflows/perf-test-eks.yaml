@@ -32,6 +32,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/mesh-perf-ci
+          role-duration-seconds: 7200
           aws-region: us-west-1
       - name: Setup go
         uses: actions/setup-go@v3
