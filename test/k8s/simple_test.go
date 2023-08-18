@@ -3,6 +3,7 @@ package k8s_test
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"strconv"
 	"time"
 
@@ -26,17 +27,28 @@ func Simple() {
 
 	var svcGraph graph.Services
 
+	var alternativeContainerRegistry string
+
 	BeforeAll(func() {
 		opts := []KumaDeploymentOption{
 			WithCtlOpts(map[string]string{
 				"--set": "" +
 					"kuma.controlPlane.resources.requests.cpu=1," +
 					"kuma.controlPlane.resources.requests.memory=2Gi," +
-					"kuma.controlPlane.resources.limits.memory=8Gi",
+					"kuma.controlPlane.resources.limits.memory=32Gi",
 				"--env-var": "" +
 					"KUMA_RUNTIME_KUBERNETES_LEADER_ELECTION_LEASE_DURATION=100s," +
 					"KUMA_RUNTIME_KUBERNETES_LEADER_ELECTION_RENEW_DEADLINE=80s",
 			}),
+		}
+
+		alternativeContainerRegistry, _ = os.LookupEnv("ALTERNATIVE_CONTAINER_REGISTRY")
+
+		if alternativeContainerRegistry != "" {
+			opts = append(opts,
+				WithCtlOpts(map[string]string{
+					"--dataplane-registry": alternativeContainerRegistry,
+				}))
 		}
 
 		opts = append(opts,
@@ -110,13 +122,17 @@ func Simple() {
 
 	It("should deploy graph", func() {
 		buffer := bytes.Buffer{}
+		fakeServiceRegistry := "nicholasjackson"
+		if alternativeContainerRegistry != "" {
+			fakeServiceRegistry = alternativeContainerRegistry
+		}
 		Expect(svcGraph.ToYaml(&buffer, graph.ServiceConf{
 			WithReachableServices: true,
 			WithNamespace:         false,
 			WithMesh:              true,
 			Namespace:             TestNamespace,
 			Mesh:                  "default",
-			Image:                 "nicholasjackson/fake-service:v0.25.2",
+			Image:                 fmt.Sprintf("%s/fake-service:v0.25.2", fakeServiceRegistry),
 		})).To(Succeed())
 
 		Expect(cluster.Install(YamlK8s(buffer.String()))).To(Succeed())

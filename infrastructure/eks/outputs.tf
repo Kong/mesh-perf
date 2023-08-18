@@ -17,3 +17,8 @@ output "cluster_name" {
   description = "Kubernetes Cluster Name"
   value       = var.cluster_name
 }
+
+output "ecr_registry" {
+  description = "ECR registry"
+  value       = format("%s.dkr.ecr.%s.amazonaws.com", values(module.ecr)[0].repository_registry_id, var.region)
+}
