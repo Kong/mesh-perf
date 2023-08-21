@@ -23,11 +23,11 @@ destroy-cluster:
 
 .PHONY: ecr-get-registry
 ecr-get-registry:
-	@$(TERRAFORM) -chdir=$(TERRAFORM_DIR) output ecr_registry
+	@$(TERRAFORM) -chdir=$(TERRAFORM_DIR) output -raw ecr_registry
 
 .PHONY: ecr-get-region
 ecr-get-region:
-	@$(TERRAFORM) -chdir=$(TERRAFORM_DIR) output region
+	@$(TERRAFORM) -chdir=$(TERRAFORM_DIR) output -raw region
 
 .PHONY: ecr-push
 ecr-push: ecr-authenticate ecr-push-kuma-dp ecr-push-fake-service
