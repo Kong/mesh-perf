@@ -48,6 +48,8 @@ jobs:
       - name: Start cluster
         run: ENV=eks make start-cluster
       - name: Export Terraform outputs
+        env:
+          ENV: eks
         run: |
           echo "AWS_REGION=$(make ecr-get-region)" >> $GITHUB_ENV
           echo "ALTERNATIVE_CONTAINER_REGISTRY=$(make ecr-get-registry)" >> $GITHUB_ENV
