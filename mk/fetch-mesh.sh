@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 dst_dir=${DST_DIR:-build}
 version=${PERF_TEST_MESH_VERSION}
 
