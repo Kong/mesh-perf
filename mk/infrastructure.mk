@@ -38,12 +38,12 @@ ecr-authenticate:
 
 .PHONY: ecr-push-kuma-dp
 ecr-push-kuma-dp:
-	docker pull kong/kuma-dp:$(PERF_TEST_MESH_VERSION) && \
+	docker pull kong/kuma-dp:$(PERF_TEST_MESH_VERSION) --platform linux/arm64 && \
 	docker tag kong/kuma-dp:$(PERF_TEST_MESH_VERSION) $(ALTERNATIVE_CONTAINER_REGISTRY)/kuma-dp:$(PERF_TEST_MESH_VERSION) && \
 	docker push $(ALTERNATIVE_CONTAINER_REGISTRY)/kuma-dp:$(PERF_TEST_MESH_VERSION)
 
 .PHONY: ecr-push-fake-service
 ecr-push-fake-service:
-	docker pull nicholasjackson/fake-service:v0.25.2 && \
+	docker pull nicholasjackson/fake-service:v0.25.2 --platform linux/arm64 && \
 	docker tag nicholasjackson/fake-service:v0.25.2 $(ALTERNATIVE_CONTAINER_REGISTRY)/fake-service:v0.25.2 && \
 	docker push $(ALTERNATIVE_CONTAINER_REGISTRY)/fake-service:v0.25.2
