@@ -16,15 +16,32 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func EnablePrometheusAdminAPI(namespace string, cluster framework.Cluster) error {
-	// because we install from install observability, we cannot set HELM values to enable admin API.
-	// Additionally, we need to set "--storage.tsdb.no-lockfile", otherwise we cannot do rolling restart
+func ApplyJSONPatch(cluster framework.Cluster, namespace, deployment string, operations []json.RawMessage) error {
+	patch, err := json.Marshal(operations)
+	if err != nil {
+		return err
+	}
+
 	return k8s.RunKubectlE(
 		cluster.GetTesting(),
 		cluster.GetKubectlOptions(namespace),
-		"patch", "deployment", "prometheus-server", "--type", "json",
-		"-p", `[{"op": "add", "path": "/spec/template/spec/containers/1/args/-", "value": "--storage.tsdb.no-lockfile"},{"op": "add", "path": "/spec/template/spec/containers/1/args/-", "value": "--web.enable-admin-api"},{"op": "replace", "path": "/spec/strategy/rollingUpdate"},{"op": "replace", "path": "/spec/strategy/type", "value": "Recreate"}]`,
+		"patch", "deployment", deployment, "--type", "json", "--patch", string(patch),
 	)
+}
+
+func EnablePrometheusAdminAPIPatch() []json.RawMessage {
+	return []json.RawMessage{
+		[]byte(`{"op": "add", "path": "/spec/template/spec/containers/1/args/-", "value": "--storage.tsdb.no-lockfile"}`),
+		[]byte(`{"op": "add", "path": "/spec/template/spec/containers/1/args/-", "value": "--web.enable-admin-api"}`),
+		[]byte(`{"op": "replace", "path": "/spec/strategy/rollingUpdate"}`),
+		[]byte(`{"op": "replace", "path": "/spec/strategy/type", "value": "Recreate"}`),
+	}
+}
+
+func SetPrometheusResourcesPatch() []json.RawMessage {
+	return []json.RawMessage{
+		[]byte(`{"op":"add","path":"/spec/template/spec/containers/1/resources/requests","value":{"cpu":"1","memory":"1Gi"}}`),
+	}
 }
 
 // SavePrometheusSnapshot triggers tsdb snapshot and copies it from kube container to hostPath

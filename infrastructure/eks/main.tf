@@ -20,12 +20,12 @@ module "vpc" {
 
   public_subnet_tags = {
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
-    "kubernetes.io/role/elb"                      = 1
+    "kubernetes.io/role/elb"                    = 1
   }
 
   private_subnet_tags = {
     "kubernetes.io/cluster/${var.cluster_name}" = "shared"
-    "kubernetes.io/role/internal-elb"             = 1
+    "kubernetes.io/role/internal-elb"           = 1
   }
 }
 
@@ -39,6 +39,9 @@ module "eks" {
   vpc_id                         = module.vpc.vpc_id
   subnet_ids                     = module.vpc.private_subnets
   cluster_endpoint_public_access = true
+
+  create_cloudwatch_log_group = false
+  cluster_enabled_log_types   = []
 
   eks_managed_node_group_defaults = {
     ami_type = "AL2_ARM_64"
@@ -88,9 +91,35 @@ resource "aws_eks_addon" "ebs-csi" {
   addon_name               = "aws-ebs-csi-driver"
   addon_version            = "v1.20.0-eksbuild.1"
   service_account_role_arn = module.irsa-ebs-csi.iam_role_arn
-  tags = {
+  tags                     = {
     "eks_addon" = "ebs-csi"
     "terraform" = "true"
   }
   depends_on = [module.eks.eks_managed_node_groups]
+}
+
+module "ecr" {
+  source = "terraform-aws-modules/ecr/aws"
+  for_each = toset(["kuma-dp", "fake-service"])
+
+  repository_name = each.key
+  repository_force_delete = "true"
+
+  repository_read_write_access_arns = [module.irsa-ebs-csi.iam_role_arn]
+  repository_lifecycle_policy       = jsonencode({
+    rules = [
+      {
+        rulePriority = 1,
+        description  = "Keep last 10 images",
+        selection    = {
+          tagStatus     = "any",
+          countType     = "imageCountMoreThan",
+          countNumber   = 10
+        },
+        action = {
+          type = "expire"
+        }
+      }
+    ]
+  })
 }

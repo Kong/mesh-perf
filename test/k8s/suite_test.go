@@ -60,7 +60,9 @@ var _ = BeforeSuite(func() {
 		obs.WithNamespace(obsNamespace),
 		obs.WithComponents(obs.PrometheusComponent, obs.GrafanaComponent),
 	))).To(Succeed())
-	Expect(framework.EnablePrometheusAdminAPI(obsNamespace, cluster)).To(Succeed())
+
+	Expect(framework.ApplyJSONPatch(cluster, obsNamespace, "prometheus-server",
+		append(framework.EnablePrometheusAdminAPIPatch(), framework.SetPrometheusResourcesPatch()...))).To(Succeed())
 
 	Expect(framework.InstallPrometheusPushgateway(cluster, obsNamespace))
 	Eventually(func() error {
