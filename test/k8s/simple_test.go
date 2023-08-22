@@ -138,10 +138,13 @@ func Simple() {
 		Expect(cluster.Install(YamlK8s(buffer.String()))).To(Succeed())
 
 		// temporary check
-		Expect(
-			k8s.WaitUntilPodAvailableE(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace),
-				"srv-001-0", 30, 1*time.Second),
-		).To(Succeed())
+		err := k8s.WaitUntilPodAvailableE(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace),
+			"srv-001-0", 30, 1*time.Second)
+		if err != nil {
+			pod := k8s.GetPod(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace), "srv-001-0")
+			fmt.Printf("DEBUG pod status %v\n", pod.Status)
+			Expect(err).To(Succeed())
+		}
 
 		Eventually(func() error {
 			expectedNumOfPods := numServices * instancesPerService
