@@ -25,6 +25,7 @@ jobs:
       PERF_TEST_NUM_SERVICES: ${{ inputs.num_services }}
       PERF_TEST_INSTANCES_PER_SERVICE: ${{ inputs.instances_per_service }}
       PERF_TEST_MESH_VERSION: ${{ inputs.mesh_version }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
