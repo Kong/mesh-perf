@@ -12,7 +12,8 @@ E2E_ENV_VARS += PERF_TEST_STABILIZATION_SLEEP=$${PERF_TEST_STABILIZATION_SLEEP:=
 
 .PHONY: fetch-mesh
 fetch-mesh:
-	[ -f $(KUMACTLBIN) ] || (DST_DIR=build PERF_TEST_MESH_VERSION=$(PERF_TEST_MESH_VERSION) $(TOP)/mk/fetch-mesh.sh)
+	mkdir -p build
+	[ -f $(KUMACTLBIN) ] || (cd build && curl -L https://docs.konghq.com/mesh/installer.sh | VERSION=$(PERF_TEST_MESH_VERSION) sh -)
 
 .PHONY: run
 run: fetch-mesh

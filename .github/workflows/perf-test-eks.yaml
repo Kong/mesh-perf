@@ -3,8 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       mesh_version:
-        description: "Mesh version"
-        required: true
+        description: "Mesh version, if not specified, then version is the latest commit from kong/kong-mesh@master"
         type: string
       num_services:
         description: "Number of services to run during testing"
