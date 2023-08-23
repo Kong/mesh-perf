@@ -1,5 +1,7 @@
 name: "Perf tests on EKS"
 on:
+  schedule:
+    - cron: "0 0 * * 1-5"
   workflow_dispatch:
     inputs:
       mesh_version:
@@ -22,8 +24,8 @@ jobs:
   perf-test:
     runs-on: ubuntu-latest
     env:
-      PERF_TEST_NUM_SERVICES: ${{ inputs.num_services }}
-      PERF_TEST_INSTANCES_PER_SERVICE: ${{ inputs.instances_per_service }}
+      PERF_TEST_NUM_SERVICES: ${{ inputs.num_services || 1000 }}
+      PERF_TEST_INSTANCES_PER_SERVICE: ${{ inputs.instances_per_service || 2}}
       PERF_TEST_MESH_VERSION: ${{ inputs.mesh_version }}
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
