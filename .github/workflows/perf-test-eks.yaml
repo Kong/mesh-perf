@@ -3,8 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       mesh_version:
-        description: "Mesh version"
-        required: true
+        description: "Mesh version, if not specified, then version is the latest commit from kong/kong-mesh@master"
         type: string
       num_services:
         description: "Number of services to run during testing"
@@ -25,6 +24,8 @@ jobs:
     env:
       PERF_TEST_NUM_SERVICES: ${{ inputs.num_services }}
       PERF_TEST_INSTANCES_PER_SERVICE: ${{ inputs.instances_per_service }}
+      PERF_TEST_MESH_VERSION: ${{ inputs.mesh_version }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -60,7 +61,6 @@ jobs:
       - name: Run tests
         env:
           PERF_TEST_STABILIZATION_SLEEP: 30s
-          PERF_TEST_NUM_SERVICES: ${{ inputs.num_services }}
           KMESH_LICENSE_JSON: |
             ${{ secrets.KMESH_LICENSE_JSON }}
         run: |
