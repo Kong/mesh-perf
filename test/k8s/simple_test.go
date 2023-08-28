@@ -17,7 +17,7 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	. "github.com/kong/mesh-perf/test/framework"
+	"github.com/kong/mesh-perf/test/framework"
 )
 
 func Simple() {
@@ -76,21 +76,20 @@ func Simple() {
 	})
 
 	BeforeEach(func() {
-		Expect(ReportSpecStart(cluster)).To(Succeed())
+		Expect(framework.ReportSpecStart(cluster)).To(Succeed())
 		start = time.Now()
-		AddReportEntry("spec.start", start)
 	})
 
 	AfterEach(func() {
 		endpoint := cluster.GetPortForward("prometheus-server").ApiServerEndpoint
-		promClient, err := NewPromClient(fmt.Sprintf("http://%s", endpoint))
+		promClient, err := framework.NewPromClient(fmt.Sprintf("http://%s", endpoint))
 		Expect(err).ToNot(HaveOccurred())
 
 		stopCh := make(chan struct{})
 		metricCh := make(chan int)
 		errCh := make(chan error)
 
-		go WatchXdsDeliveryCount(promClient, stopCh, metricCh, errCh)
+		go framework.WatchXdsDeliveryCount(promClient, stopCh, metricCh, errCh)
 		defer close(stopCh)
 
 	Loop:
@@ -104,10 +103,9 @@ func Simple() {
 			}
 		}
 
-		Expect(ReportSpecEnd(cluster)).To(Succeed())
+		Expect(framework.ReportSpecEnd(cluster)).To(Succeed())
 		end := time.Now()
-		AddReportEntry("spec.end", end)
-		AddReportEntry("spec.duration", end.Sub(start))
+		AddReportEntry("duration", end.Sub(start))
 	})
 
 	E2EAfterAll(func() {
@@ -142,16 +140,14 @@ func Simple() {
 			return k8s.WaitUntilNumPodsCreatedE(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace),
 				metav1.ListOptions{}, expectedNumOfPods, 1, 0)
 		}, "10m", "3s").Should(Succeed())
-
-		AddReportEntry("duration", time.Now().Sub(start))
 	})
 
 	It("should deploy mesh wide policy", func() {
 		endpoint := cluster.GetPortForward("prometheus-server").ApiServerEndpoint
-		promClient, err := NewPromClient(fmt.Sprintf("http://%s", endpoint))
+		promClient, err := framework.NewPromClient(fmt.Sprintf("http://%s", endpoint))
 		Expect(err).ToNot(HaveOccurred())
 
-		deliveryCount, err := XdsDeliveryCount(promClient)
+		deliveryCount, err := framework.XdsDeliveryCount(promClient)
 		Expect(err).ToNot(HaveOccurred())
 
 		policy := `
@@ -176,14 +172,14 @@ spec:
               status: 429
 `
 		Expect(cluster.Install(YamlK8s(policy))).To(Succeed())
-		start := time.Now()
+		propagationStart := time.Now()
 
 		Eventually(func(g Gomega) {
-			newDeliveryCount, err := XdsDeliveryCount(promClient)
+			newDeliveryCount, err := framework.XdsDeliveryCount(promClient)
 			g.Expect(err).ToNot(HaveOccurred())
 			g.Expect(newDeliveryCount - deliveryCount).To(Equal(numServices * instancesPerService))
 		}, "60s", "1s").Should(Succeed())
-		AddReportEntry("duration", time.Now().Sub(start))
+		AddReportEntry("policy_propagation_duration", time.Now().Sub(propagationStart))
 	})
 
 	Context("scaling", func() {
@@ -222,13 +218,14 @@ spec:
 
 			err = cluster.Install(WaitNumPods(TestNamespace, replicas, observable))
 			Expect(err).ToNot(HaveOccurred())
-			start := time.Now()
+
+			propagationStart := time.Now()
 			Eventually(func(g Gomega) {
 				membership, err := admin.GetStats(fmt.Sprintf("cluster.%s_kuma-test_svc_80.membership_total", observable))
 				g.Expect(err).ToNot(HaveOccurred())
 				g.Expect(membership.Stats[0].Value).To(BeNumerically("==", replicas))
 			}, "60s", "1s").Should(Succeed())
-			AddReportEntry("duration", time.Now().Sub(start))
+			AddReportEntry("endpoint_propagation_duration", time.Now().Sub(propagationStart))
 		}
 
 		It("should scale up a service", func() {
@@ -244,7 +241,7 @@ spec:
 		expectedCerts := numServices * instancesPerService
 		Expect(cluster.Install(MTLSMeshKubernetes("default"))).To(Succeed())
 
-		start := time.Now()
+		propagationStart := time.Now()
 		Eventually(func(g Gomega) {
 			out, err := k8s.RunKubectlAndGetOutputE(
 				cluster.GetTesting(),
@@ -254,6 +251,6 @@ spec:
 			g.Expect(err).ToNot(HaveOccurred())
 			g.Expect(out).To(Equal(fmt.Sprintf("'%d'", expectedCerts)))
 		}, "60s", "1s").Should(Succeed())
-		AddReportEntry("duration", time.Now().Sub(start))
+		AddReportEntry("certs_propagation_duration", time.Now().Sub(propagationStart))
 	})
 }

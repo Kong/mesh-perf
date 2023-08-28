@@ -7,6 +7,7 @@ require (
 	github.com/go-errors/errors v1.4.2
 	github.com/go-logr/stdr v1.2.2
 	github.com/gruntwork-io/terratest v0.41.15
+	github.com/kennygrant/sanitize v1.2.4
 	github.com/kumahq/kuma v0.0.0-20230717095426-746dc0de4d15
 	github.com/kumahq/kuma-tools v0.0.3-0.20230802104244-bb532a92c41c
 	github.com/onsi/ginkgo/v2 v2.11.0
@@ -14,6 +15,7 @@ require (
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/common v0.44.0
 	k8s.io/apimachinery v0.27.3
+	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5
 )
 
 require (
@@ -67,7 +69,6 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
-	github.com/kennygrant/sanitize v1.2.4 // indirect
 	github.com/kumahq/protoc-gen-kumadoc v0.3.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-zglob v0.0.2-0.20190814121620-e3c945676326 // indirect
@@ -128,7 +129,6 @@ require (
 	k8s.io/component-base v0.27.3 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect
-	k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5 // indirect
 	sigs.k8s.io/controller-runtime v0.15.0 // indirect
 	sigs.k8s.io/gateway-api v0.7.1-0.20230613222957-c9540a9cf448 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
