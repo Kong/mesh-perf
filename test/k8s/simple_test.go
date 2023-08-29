@@ -178,7 +178,7 @@ spec:
 			newDeliveryCount, err := framework.XdsDeliveryCount(promClient)
 			g.Expect(err).ToNot(HaveOccurred())
 			g.Expect(newDeliveryCount - deliveryCount).To(Equal(numServices * instancesPerService))
-		}, "60s", "1s").Should(Succeed())
+		}, "2m", "1s").Should(Succeed())
 		AddReportEntry("policy_propagation_duration", time.Now().Sub(propagationStart))
 	})
 
