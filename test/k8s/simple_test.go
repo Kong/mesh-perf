@@ -105,7 +105,7 @@ func Simple() {
 
 		Expect(framework.ReportSpecEnd(cluster)).To(Succeed())
 		end := time.Now()
-		AddReportEntry("duration", end.Sub(start))
+		AddReportEntry("duration", end.Sub(start).Abs())
 	})
 
 	E2EAfterAll(func() {
