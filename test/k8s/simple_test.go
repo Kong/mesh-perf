@@ -105,7 +105,7 @@ func Simple() {
 
 		Expect(framework.ReportSpecEnd(cluster)).To(Succeed())
 		end := time.Now()
-		AddReportEntry("duration", end.Sub(start).Abs())
+		AddReportEntry("duration", end.Sub(start).Milliseconds())
 	})
 
 	E2EAfterAll(func() {
@@ -179,7 +179,7 @@ spec:
 			g.Expect(err).ToNot(HaveOccurred())
 			g.Expect(newDeliveryCount - deliveryCount).To(Equal(numServices * instancesPerService))
 		}, "60s", "1s").Should(Succeed())
-		AddReportEntry("policy_propagation_duration", time.Now().Sub(propagationStart))
+		AddReportEntry("policy_propagation_duration", time.Now().Sub(propagationStart).Milliseconds())
 	})
 
 	Context("scaling", func() {
@@ -225,7 +225,7 @@ spec:
 				g.Expect(err).ToNot(HaveOccurred())
 				g.Expect(membership.Stats[0].Value).To(BeNumerically("==", replicas))
 			}, "60s", "1s").Should(Succeed())
-			AddReportEntry("endpoint_propagation_duration", time.Now().Sub(propagationStart))
+			AddReportEntry("endpoint_propagation_duration", time.Now().Sub(propagationStart).Milliseconds())
 		}
 
 		It("should scale up a service", func() {
@@ -251,6 +251,6 @@ spec:
 			g.Expect(err).ToNot(HaveOccurred())
 			g.Expect(out).To(Equal(fmt.Sprintf("'%d'", expectedCerts)))
 		}, "60s", "1s").Should(Succeed())
-		AddReportEntry("certs_propagation_duration", time.Now().Sub(propagationStart))
+		AddReportEntry("certs_propagation_duration", time.Now().Sub(propagationStart).Milliseconds())
 	})
 }
