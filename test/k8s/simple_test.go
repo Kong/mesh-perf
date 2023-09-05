@@ -109,7 +109,7 @@ func Simple() {
 	})
 
 	E2EAfterAll(func() {
-		Expect(cluster.DeleteNamespace(TestNamespace)).To(Succeed())
+		Expect(cluster.TriggerDeleteNamespace(TestNamespace)).To(Succeed())
 		Expect(cluster.DeleteKuma()).To(Succeed())
 	})
 
