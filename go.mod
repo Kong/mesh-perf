@@ -1,11 +1,9 @@
 module github.com/kong/mesh-perf
 
-go 1.20
+go 1.21
 
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.15.0
-	github.com/go-errors/errors v1.4.2
-	github.com/go-logr/stdr v1.2.2
 	github.com/gruntwork-io/terratest v0.41.15
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/kumahq/kuma v0.0.0-20230905142512-abbaddbd4823
@@ -37,7 +35,9 @@ require (
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
+	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
+	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-logr/zapr v1.2.4 // indirect
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect

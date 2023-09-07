@@ -3,11 +3,11 @@ package framework
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"time"
 
-	"github.com/go-errors/errors"
 	"github.com/gruntwork-io/terratest/modules/k8s"
 	"github.com/kumahq/kuma/test/framework"
 	"github.com/prometheus/client_golang/api"
@@ -58,7 +58,7 @@ func SavePrometheusSnapshot(cluster framework.Cluster, namespace string, hostPat
 		return err
 	}
 	if len(pods) != 1 {
-		return errors.Errorf("expected %d pods, got %d", 1, len(pods))
+		return fmt.Errorf("expected %d pods, got %d", 1, len(pods))
 	}
 	podName := pods[0].Name
 
@@ -77,7 +77,7 @@ func SavePrometheusSnapshot(cluster framework.Cluster, namespace string, hostPat
 		return err
 	}
 	if resp.Status != "success" {
-		return errors.Errorf("invalid status %s", resp.Status)
+		return fmt.Errorf("invalid status %s", resp.Status)
 	}
 
 	// extract snapshot
