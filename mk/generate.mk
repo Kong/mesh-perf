@@ -16,7 +16,10 @@ generate-grafana: $(JSONNET_BUNDLER_CACHE_DIR) $(addprefix generate-grafana-,$(d
 generate: generate-grafana
 
 clean-%: 
-	rm $(DASHBOARDS_DIR)/$*.json
+	rm -rf $(DASHBOARDS_DIR)/$*.json
+
+clean-$(JSONNET_BUNDLER_CACHE_DIR):
+	rm -rf $(JSONNET_BUNDLER_CACHE_DIR)
 
 .PHONY: clean
-clean: $(addprefix clean-,$(dashboards))
+clean: clean-$(JSONNET_BUNDLER_CACHE_DIR) $(addprefix clean-,$(dashboards))
