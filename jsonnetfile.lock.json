@@ -4,12 +4,22 @@
     {
       "source": {
         "git": {
+          "remote": "https://github.com/Duologic/jsonnet-libsonnet.git",
+          "subdir": ""
+        }
+      },
+      "version": "7cc2479f21b09a32a86f7128524919f27e90b26b",
+      "sum": "Q8UbL16Hro5GMONfbW5UyrupHTzmOWSK8PZ0xa6OvHM="
+    },
+    {
+      "source": {
+        "git": {
           "remote": "https://github.com/crdsonnet/crdsonnet.git",
           "subdir": "crdsonnet"
         }
       },
-      "version": "1cd8c0a1fe2ead180db4570b2460364885996d7e",
-      "sum": "4uBhhMvCyGAcVZyyP0i7pOfQJRcaqRik/1/JknmWslo="
+      "version": "148bcc4959273c51a098bac9654a0e1a60ed5118",
+      "sum": "JNQerWOBHj/dmlTCrEc8ko30JOvjg+LQyEhjcduHH/s="
     },
     {
       "source": {
@@ -28,7 +38,7 @@
           "subdir": "gen/grafonnet-latest"
         }
       },
-      "version": "1757b16ae293868dc745359ace45f2c3010ac95f",
+      "version": "48e3064ac4ed7d0758199b2e275201f045ec496a",
       "sum": "sVzVlSLbxPkAurwO19YERigLMmRfVsViMcWC0gkTTqU="
     },
     {
@@ -38,8 +48,8 @@
           "subdir": "gen/grafonnet-v10.0.0"
         }
       },
-      "version": "1757b16ae293868dc745359ace45f2c3010ac95f",
-      "sum": "al5VJMRi6u2Bkutif6MUA/CnAHUhT9CttFPiNXKhUXc="
+      "version": "48e3064ac4ed7d0758199b2e275201f045ec496a",
+      "sum": "wH2tR2yWJ2N4wqcpcmkxYy+rmds7VGKOJ926oJxP/Gg="
     },
     {
       "source": {
@@ -48,8 +58,8 @@
           "subdir": "grafonnet-base"
         }
       },
-      "version": "1757b16ae293868dc745359ace45f2c3010ac95f",
-      "sum": "m85c4oyQB5BYqUh1fEBMz5YLDDPj8aHrO0BA7E81Pxg="
+      "version": "48e3064ac4ed7d0758199b2e275201f045ec496a",
+      "sum": "EC3+EcpaTPiXNWqY20Fugr/pN7XuTYcWpLHXpDJRcp4="
     },
     {
       "source": {
