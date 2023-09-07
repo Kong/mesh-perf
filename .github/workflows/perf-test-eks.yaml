@@ -38,11 +38,9 @@ jobs:
           role-duration-seconds: 7200
           aws-region: us-west-1
       - name: Setup go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
-          go-version: '^1.20'
-          cache: true
-          cache-dependency-path: go.sum
+          go-version-file: go.mod
       - name: make dev/tools
         run: make dev/tools
       - name: Calculate number of nodes for cluster
