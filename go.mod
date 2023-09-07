@@ -6,7 +6,7 @@ require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.15.0
 	github.com/go-errors/errors v1.4.2
 	github.com/go-logr/stdr v1.2.2
-	github.com/gruntwork-io/terratest v0.41.15
+	github.com/gruntwork-io/terratest v0.43.13
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/kumahq/kuma v0.0.0-20230905142512-abbaddbd4823
 	github.com/kumahq/kuma-tools v0.0.3-0.20230907092444-29e192174673
