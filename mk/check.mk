@@ -7,7 +7,7 @@ fmt:
 	go fmt ./...
 
 .PHONY: check
-check: tidy fmt generate
+check: clean tidy fmt generate
 	# fail if Git working tree is dirty or there are untracked files
 	git diff --quiet || \
 	git ls-files --other --directory --exclude-standard --no-empty-directory | wc -l | read UNTRACKED_FILES; if [ "$$UNTRACKED_FILES" != "0" ]; then false; fi || \
