@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -20,7 +21,7 @@ func main() {
 	cfg := datadog.NewConfiguration()
 	apiClient := datadog.NewAPIClient(cfg)
 	logsApi := datadogV2.NewLogsApi(apiClient)
-	ctx := datadog.NewDefaultContext(nil)
+	ctx := datadog.NewDefaultContext(context.Background())
 
 	var logs []datadogV2.HTTPLogItem
 	for _, reportFilename := range os.Args[1:] {
