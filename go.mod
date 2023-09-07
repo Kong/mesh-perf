@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.15.0
-	github.com/go-errors/errors v1.4.2
+	github.com/go-errors/errors v1.5.0
 	github.com/go-logr/stdr v1.2.2
 	github.com/gruntwork-io/terratest v0.41.15
 	github.com/kennygrant/sanitize v1.2.4
