@@ -147,7 +147,7 @@ func Simple() {
 		promClient, err := framework.NewPromClient(fmt.Sprintf("http://%s", endpoint))
 		Expect(err).ToNot(HaveOccurred())
 
-		deliveryCount, err := framework.XdsDeliveryCount(promClient)
+		acks, err := framework.XdsAckRequestsReceived(promClient)
 		Expect(err).ToNot(HaveOccurred())
 
 		policy := `
@@ -175,9 +175,9 @@ spec:
 		propagationStart := time.Now()
 
 		Eventually(func(g Gomega) {
-			newDeliveryCount, err := framework.XdsDeliveryCount(promClient)
+			newAcks, err := framework.XdsAckRequestsReceived(promClient)
 			g.Expect(err).ToNot(HaveOccurred())
-			g.Expect(newDeliveryCount - deliveryCount).To(Equal(numServices * instancesPerService))
+			g.Expect(newAcks - acks).To(Equal(numServices * instancesPerService))
 		}, "2m", "1s").Should(Succeed())
 		AddReportEntry("policy_propagation_duration", time.Since(propagationStart).Milliseconds())
 	})
