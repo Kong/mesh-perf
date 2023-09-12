@@ -9,6 +9,10 @@ func XdsDeliveryCount(promClient *PromClient) (int, error) {
 	return promClient.QueryIntValue("xds_delivery_count")
 }
 
+func XdsAckRequestsReceived(promClient *PromClient) (int, error) {
+	return promClient.QueryIntValue(`sum(xds_requests_received{confirmation="ACK"})`)
+}
+
 func WatchXdsDeliveryCount(promClient *PromClient, stopCh <-chan struct{}, metricCh chan<- int, errCh chan<- error) {
 	lastVal := -1 // unreachable value for counter
 	for {

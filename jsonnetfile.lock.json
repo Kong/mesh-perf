@@ -4,41 +4,11 @@
     {
       "source": {
         "git": {
-          "remote": "https://github.com/Duologic/jsonnet-libsonnet.git",
-          "subdir": ""
-        }
-      },
-      "version": "7cc2479f21b09a32a86f7128524919f27e90b26b",
-      "sum": "Q8UbL16Hro5GMONfbW5UyrupHTzmOWSK8PZ0xa6OvHM="
-    },
-    {
-      "source": {
-        "git": {
-          "remote": "https://github.com/crdsonnet/crdsonnet.git",
-          "subdir": "crdsonnet"
-        }
-      },
-      "version": "148bcc4959273c51a098bac9654a0e1a60ed5118",
-      "sum": "JNQerWOBHj/dmlTCrEc8ko30JOvjg+LQyEhjcduHH/s="
-    },
-    {
-      "source": {
-        "git": {
-          "remote": "https://github.com/crdsonnet/validate-libsonnet.git",
-          "subdir": ""
-        }
-      },
-      "version": "a78ca15fbfece3110c4807d1f059132ece01d97b",
-      "sum": "qYLH56MqvmgxE4YMNeTbuJ1XSsCpl1sumHN5x8IQv2I="
-    },
-    {
-      "source": {
-        "git": {
           "remote": "https://github.com/grafana/grafonnet.git",
           "subdir": "gen/grafonnet-latest"
         }
       },
-      "version": "48e3064ac4ed7d0758199b2e275201f045ec496a",
+      "version": "d37dd0e8d3498bfe45c997d1b634df37483b8abc",
       "sum": "sVzVlSLbxPkAurwO19YERigLMmRfVsViMcWC0gkTTqU="
     },
     {
@@ -48,28 +18,8 @@
           "subdir": "gen/grafonnet-v10.0.0"
         }
       },
-      "version": "48e3064ac4ed7d0758199b2e275201f045ec496a",
-      "sum": "wH2tR2yWJ2N4wqcpcmkxYy+rmds7VGKOJ926oJxP/Gg="
-    },
-    {
-      "source": {
-        "git": {
-          "remote": "https://github.com/grafana/grafonnet.git",
-          "subdir": "grafonnet-base"
-        }
-      },
-      "version": "48e3064ac4ed7d0758199b2e275201f045ec496a",
-      "sum": "EC3+EcpaTPiXNWqY20Fugr/pN7XuTYcWpLHXpDJRcp4="
-    },
-    {
-      "source": {
-        "git": {
-          "remote": "https://github.com/grafana/grok.git",
-          "subdir": "jsonnet/v10.0.0"
-        }
-      },
-      "version": "7a7f6b80de0ba5713a7ed45833acf5f641b08d4d",
-      "sum": "cpxEEjeaQMUYA938vuVie3s5SSRv+O9IWwL9F1m44Qk="
+      "version": "d37dd0e8d3498bfe45c997d1b634df37483b8abc",
+      "sum": "niLBEXrTCZ1JwqTMLnvy+yXqhrhvuIk0v+1YsB/bIkg="
     },
     {
       "source": {
