@@ -109,6 +109,8 @@ func Simple() {
 	})
 
 	E2EAfterAll(func() {
+		Expect(k8s.RunKubectlE(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace), "delete", "statefulsets", "--all", "--grace-period=0")).To(Succeed())
+		Expect(k8s.RunKubectlE(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace), "delete", "deployments", "--all", "--grace-period=0")).To(Succeed())
 		Expect(cluster.TriggerDeleteNamespace(TestNamespace)).To(Succeed())
 		Expect(cluster.DeleteKuma()).To(Succeed())
 	})
