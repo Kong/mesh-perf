@@ -1,6 +1,7 @@
 module github.com/kong/mesh-perf
 
-go 1.21
+go 1.21.1
+
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.17.0
 	github.com/gruntwork-io/terratest v0.44.0
