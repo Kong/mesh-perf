@@ -38,7 +38,7 @@ jobs:
           role-duration-seconds: 7200
           aws-region: us-west-1
       - name: Setup go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
       - name: make dev/tools
