@@ -4,7 +4,7 @@ go 1.21.1
 
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.20.0
-	github.com/gruntwork-io/terratest v0.46.7
+	github.com/gruntwork-io/terratest v0.46.8
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/kumahq/kuma v0.0.0-20230912085618-243078cbb950
 	github.com/kumahq/kuma-tools v0.0.3-0.20230907092444-29e192174673
@@ -121,9 +121,9 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.0 // indirect
-	k8s.io/api v0.28.1 // indirect
+	k8s.io/api v0.28.4 // indirect
 	k8s.io/apiextensions-apiserver v0.28.1 // indirect
-	k8s.io/client-go v0.28.1 // indirect
+	k8s.io/client-go v0.28.4 // indirect
 	k8s.io/component-base v0.28.1 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 // indirect
