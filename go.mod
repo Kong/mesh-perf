@@ -4,7 +4,7 @@ go 1.21.1
 
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.21.0
-	github.com/gruntwork-io/terratest v0.46.8
+	github.com/gruntwork-io/terratest v0.46.11
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/kumahq/kuma v0.0.0-20230912085618-243078cbb950
 	github.com/kumahq/kuma-tools v0.0.3-0.20230907092444-29e192174673
@@ -17,6 +17,7 @@ require (
 )
 
 require (
+	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/DataDog/zstd v1.5.2 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Nordix/simple-ipam v1.0.0 // indirect
@@ -50,16 +51,23 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
+	github.com/gonvenience/bunt v1.3.5 // indirect
+	github.com/gonvenience/neat v1.3.12 // indirect
+	github.com/gonvenience/term v1.0.2 // indirect
+	github.com/gonvenience/text v1.0.7 // indirect
+	github.com/gonvenience/wrap v1.1.2 // indirect
+	github.com/gonvenience/ytbx v1.4.4 // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/pprof v0.0.0-20230323073829-e72429f035bd // indirect
+	github.com/google/pprof v0.0.0-20230602150820-91b7bce49751 // indirect
 	github.com/google/uuid v1.3.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/gruntwork-io/go-commons v0.8.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hoisie/mustache v0.0.0-20160804235033-6375acf62c69 // indirect
+	github.com/homeport/dyff v1.6.0 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
@@ -70,9 +78,14 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/kumahq/protoc-gen-kumadoc v0.3.1 // indirect
+	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/mattn/go-ciede2000 v0.0.0-20170301095244-782e8c62fec3 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mattn/go-zglob v0.0.2-0.20190814121620-e3c945676326 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/mitchellh/go-ps v1.0.0 // indirect
+	github.com/mitchellh/hashstructure v1.1.0 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
@@ -84,12 +97,15 @@ require (
 	github.com/prometheus/client_model v0.5.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/sethvargo/go-retry v0.2.4 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/slok/go-http-metrics v0.10.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
+	github.com/texttheater/golang-levenshtein v1.0.1 // indirect
 	github.com/urfave/cli v1.22.12 // indirect
+	github.com/virtuald/go-ordered-json v0.0.0-20170621173500-b18e6e673d74 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.43.0 // indirect
 	go.opentelemetry.io/otel v1.17.0 // indirect
 	go.opentelemetry.io/otel/metric v1.17.0 // indirect
