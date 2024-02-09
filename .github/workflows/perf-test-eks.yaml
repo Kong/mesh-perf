@@ -70,6 +70,7 @@ jobs:
         with:
           name: test-metrics-snapshot
           path: /tmp/prom-snapshots
+          retention-days: 14
       - uses: actions/upload-artifact@v4
         if: always()
         with:
