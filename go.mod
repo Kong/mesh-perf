@@ -3,7 +3,7 @@ module github.com/kong/mesh-perf
 go 1.21.1
 
 require (
-	github.com/DataDog/datadog-api-client-go/v2 v2.21.0
+	github.com/DataDog/datadog-api-client-go/v2 v2.22.0
 	github.com/gruntwork-io/terratest v0.46.11
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/kumahq/kuma v0.0.0-20230912085618-243078cbb950
@@ -61,7 +61,7 @@ require (
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/pprof v0.0.0-20230602150820-91b7bce49751 // indirect
-	github.com/google/uuid v1.3.1 // indirect
+	github.com/google/uuid v1.5.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/gruntwork-io/go-commons v0.8.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
