@@ -159,6 +159,8 @@ metadata:
 spec:
   targetRef:
     kind: Mesh
+    proxyTypes:
+      - Sidecar
   from:
     - targetRef:
         kind: Mesh
