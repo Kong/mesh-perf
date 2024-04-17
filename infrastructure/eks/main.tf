@@ -69,6 +69,9 @@ module "eks" {
       description                   = "Allow access from control plane to webhook port of AWS load balancer controller"
     }
   }
+  authentication_mode                      = "API_AND_CONFIG_MAP"
+  # required to add current use as a cluster admin
+  enable_cluster_creator_admin_permissions = true
 }
 
 data "aws_iam_policy" "ebs_csi_policy" {
