@@ -57,7 +57,7 @@ func Simple() {
 			}))
 
 		err := NewClusterSetup().
-			Install(Kuma(core.Standalone, opts...)).
+			Install(Kuma(core.Zone, opts...)).
 			Install(NamespaceWithSidecarInjection(TestNamespace)).
 			Setup(cluster)
 		Expect(err).ToNot(HaveOccurred())
