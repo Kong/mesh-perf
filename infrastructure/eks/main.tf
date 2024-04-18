@@ -34,7 +34,7 @@ module "eks" {
   version = "20.8.5"
 
   cluster_name    = var.cluster_name
-  cluster_version = "1.27"
+  cluster_version = "1.29"
 
   vpc_id                         = module.vpc.vpc_id
   subnet_ids                     = module.vpc.private_subnets
@@ -69,6 +69,9 @@ module "eks" {
       description                   = "Allow access from control plane to webhook port of AWS load balancer controller"
     }
   }
+  authentication_mode                      = "API_AND_CONFIG_MAP"
+  # required to add current use as a cluster admin
+  enable_cluster_creator_admin_permissions = true
 }
 
 data "aws_iam_policy" "ebs_csi_policy" {
