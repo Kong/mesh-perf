@@ -1,4 +1,6 @@
 name: "Perf tests on EKS"
+run-name: "Perf tests on EKS - KM ${{ inputs.mesh_version != '' && inputs.mesh_version || 'latest' }}, ${{ inputs.num_services }} services, ${{ inputs.instances_per_service }} instances per service"
+
 on:
   schedule:
     - cron: "0 0 * * 1-5"
