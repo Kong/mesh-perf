@@ -48,6 +48,8 @@ jobs:
       - name: Calculate number of nodes for cluster
         run:
           echo "EKS_NUM_OF_NODES=$(make number-of-nodes)" >> $GITHUB_ENV
+      - name: Upload images to ECR
+        run: make ecr-push
       - name: Start cluster
         run: ENV=eks make start-cluster
       - name: Export Terraform outputs
@@ -58,8 +60,6 @@ jobs:
           echo "ALTERNATIVE_CONTAINER_REGISTRY=$(make ecr-get-registry)" >> $GITHUB_ENV
       - name: Configure kubectl
         run: aws eks --region $AWS_REGION update-kubeconfig --name mesh-perf
-      - name: Upload images to ECR
-        run: make ecr-push
       - name: Run tests
         env:
           PERF_TEST_STABILIZATION_SLEEP: 30s
