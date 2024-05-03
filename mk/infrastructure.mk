@@ -38,6 +38,7 @@ ecr-authenticate:
 
 .PHONY: ecr-push-kuma-dp
 ecr-push-kuma-dp:
+	@if [[ -z "$(PERF_TEST_MESH_VERSION)" ]]; then echo "PERF_TEST_MESH_VERSION must be defined"; exit 1; fi
 	docker pull kong/kuma-dp:$(PERF_TEST_MESH_VERSION) --platform linux/arm64 && \
 	docker tag kong/kuma-dp:$(PERF_TEST_MESH_VERSION) $(ALTERNATIVE_CONTAINER_REGISTRY)/kuma-dp:$(PERF_TEST_MESH_VERSION) && \
 	docker push $(ALTERNATIVE_CONTAINER_REGISTRY)/kuma-dp:$(PERF_TEST_MESH_VERSION)
