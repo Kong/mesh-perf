@@ -28,7 +28,6 @@ jobs:
     env:
       PERF_TEST_NUM_SERVICES: ${{ inputs.num_services || 1000 }}
       PERF_TEST_INSTANCES_PER_SERVICE: ${{ inputs.instances_per_service || 2}}
-      PERF_TEST_MESH_VERSION: ${{ inputs.mesh_version }}
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
       - name: Checkout
@@ -58,15 +57,23 @@ jobs:
           echo "ALTERNATIVE_CONTAINER_REGISTRY=$(make ecr-get-registry)" >> $GITHUB_ENV
       - name: Configure kubectl
         run: aws eks --region $AWS_REGION update-kubeconfig --name mesh-perf
+      - name: Get version
+        id: version
+        run: |
+          version="${{ inputs.mesh_version }}"
+          if [[ -z "${version}" ]]; then
+            version=$(curl --silent -L https://docs.konghq.com/mesh/installer.sh  | VERSION=preview sh -s - --print-version | tail -n1)
+          fi
+          echo "PERF_TEST_MESH_VERSION=${version}" >> ${GITHUB_ENV}
       - name: Upload images to ECR
-        run: make ecr-push
+        run: PERF_TEST_MESH_VERSION="${{ env.PERF_TEST_MESH_VERSION }}" make ecr-push
       - name: Run tests
         env:
           PERF_TEST_STABILIZATION_SLEEP: 30s
           KMESH_LICENSE_JSON: |
             ${{ secrets.KMESH_LICENSE_JSON }}
         run: |
-          KMESH_LICENSE=<(printenv KMESH_LICENSE_JSON) make run
+          KMESH_LICENSE=<(printenv KMESH_LICENSE_JSON) PERF_TEST_MESH_VERSION="${{ env.PERF_TEST_MESH_VERSION }}" make run
       - uses: actions/upload-artifact@v4
         if: always()
         with:
