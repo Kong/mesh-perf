@@ -10,7 +10,7 @@ require (
 	github.com/kumahq/kuma-tools v0.0.3-0.20230907092444-29e192174673
 	github.com/onsi/ginkgo/v2 v2.17.2
 	github.com/onsi/gomega v1.33.1
-	github.com/prometheus/client_golang v1.19.0
+	github.com/prometheus/client_golang v1.19.1
 	github.com/prometheus/common v0.53.0
 	k8s.io/apimachinery v0.29.3
 	k8s.io/utils v0.0.0-20240102154912-e7106e64919e
