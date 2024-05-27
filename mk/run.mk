@@ -6,6 +6,8 @@ E2E_ENV_VARS += TEST_ROOT="$(TOP)"
 E2E_ENV_VARS += E2E_CONFIG_FILE="$(TOP)/test/cfg.yaml"
 E2E_ENV_VARS += KUMACTLBIN="$(KUMACTLBIN)"
 E2E_ENV_VARS += PERF_TEST_MESH_VERSION=$(PERF_TEST_MESH_VERSION)
+E2E_ENV_VARS += PERF_LIMIT_MEGA_MEMORY=$${PERF_LIMIT_MEGA_MEMORY:=512}
+E2E_ENV_VARS += PERF_LIMIT_MILLI_CPU=$${PERF_LIMIT_MILLI_CPU:=1000}
 E2E_ENV_VARS += PERF_TEST_NUM_SERVICES=$${PERF_TEST_NUM_SERVICES:=5}
 E2E_ENV_VARS += PERF_TEST_INSTANCES_PER_SERVICE=$${PERF_TEST_INSTANCES_PER_SERVICE:=1}
 E2E_ENV_VARS += PERF_TEST_STABILIZATION_SLEEP=$${PERF_TEST_STABILIZATION_SLEEP:=10s}
@@ -18,4 +20,8 @@ fetch-mesh:
 
 .PHONY: run
 run: fetch-mesh
-	$(E2E_ENV_VARS) $(GINKGO) -v --timeout=4h --json-report=raw-report.json ./test/...
+	$(E2E_ENV_VARS) $(GINKGO) -v --timeout=4h --label-filter="!limits" --json-report=raw-report.json ./test/...
+
+.PHONY: run/limits
+run/limits: fetch-mesh
+	$(E2E_ENV_VARS) $(GINKGO) -v --timeout=4h --label-filter="limits" --json-report=raw-report.json ./test/...
