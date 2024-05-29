@@ -1,6 +1,6 @@
 module github.com/kong/mesh-perf
 
-go 1.21.9
+go 1.22.2
 
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.26.0
@@ -12,7 +12,7 @@ require (
 	github.com/onsi/gomega v1.33.1
 	github.com/prometheus/client_golang v1.19.1
 	github.com/prometheus/common v0.53.0
-	k8s.io/apimachinery v0.29.3
+	k8s.io/apimachinery v0.30.0
 	k8s.io/utils v0.0.0-20240102154912-e7106e64919e
 )
 
@@ -143,7 +143,7 @@ require (
 	k8s.io/client-go v0.29.3 // indirect
 	k8s.io/component-base v0.29.3 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20240105020646-a37d4de58910 // indirect
+	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
 	sigs.k8s.io/controller-runtime v0.17.3 // indirect
 	sigs.k8s.io/gateway-api v1.0.1-0.20240229112436-da26d60306e1 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
