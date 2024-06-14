@@ -19,6 +19,17 @@ ENV=local make start-cluster
 make run
 ```
 
+You may want to:
+```shell
+ KMESH_LICENSE=$(pwd)/../kong-mesh/test/license/license.json PERF_TEST_MESH_VERSION=0.0.0-preview.ve242fefd0 ENV=local make run
+```
+Where kong-mesh is the checkout of kong-mesh
+
+You can obtain the latest preview with:
+```shell
+curl -s -L https://docs.konghq.com/mesh/installer.sh  | VERSION=preview sh -s - --print-version | tail -n1
+```
+
 4. Destroy local cluster
 ```sh
 ENV=local make destroy-cluster
