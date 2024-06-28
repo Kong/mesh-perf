@@ -101,7 +101,3 @@ var _ = ReportAfterSuite("compile report", func(ginkgoReport Report) {
 		Expect(os.WriteFile(path.Join(reportDir, fileName), specReportBytes, 0666)).To(Succeed())
 	}
 })
-
-var (
-	_ = Describe("Simple", Simple, Ordered)
-)
