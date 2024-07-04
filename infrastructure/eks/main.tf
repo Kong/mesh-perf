@@ -98,7 +98,10 @@ resource "aws_eks_addon" "ebs-csi" {
     "eks_addon" = "ebs-csi"
     "terraform" = "true"
   }
-  depends_on = [module.eks.eks_managed_node_groups]
+  depends_on = [
+    module.eks.eks_managed_node_groups,
+    module.irsa-ebs-csi
+  ]
 }
 
 module "ecr" {
@@ -126,4 +129,5 @@ module "ecr" {
 #       }
 #     ]
 #   })
+  depends_on = [module.irsa-ebs-csi]
 }
