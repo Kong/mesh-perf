@@ -110,20 +110,20 @@ module "ecr" {
   repository_force_delete = "true"
 
   repository_read_write_access_arns = [module.irsa-ebs-csi.iam_role_arn]
-  repository_lifecycle_policy       = jsonencode({
-    rules = [
-      {
-        rulePriority = 1,
-        description  = "Keep last 10 images",
-        selection    = {
-          tagStatus     = "any",
-          countType     = "imageCountMoreThan",
-          countNumber   = 10
-        },
-        action = {
-          type = "expire"
-        }
-      }
-    ]
-  })
+#   repository_lifecycle_policy       = jsonencode({
+#     rules = [
+#       {
+#         rulePriority = 1,
+#         description  = "Keep last 10 images",
+#         selection    = {
+#           tagStatus     = "any",
+#           countType     = "imageCountMoreThan",
+#           countNumber   = 10
+#         },
+#         action = {
+#           type = "expire"
+#         }
+#       }
+#     ]
+#   })
 }
