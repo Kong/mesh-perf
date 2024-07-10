@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -38,6 +39,7 @@ func ResourceLimits() {
 					"kuma.controlPlane.resources.limits.cpu=2000m," +
 					"kuma.controlPlane.resources.limits.memory=2048Mi",
 				"--env-var": "" +
+					"GODEBUG=gctrace=1," +
 					"KUMA_RUNTIME_KUBERNETES_LEADER_ELECTION_LEASE_DURATION=100s," +
 					"KUMA_RUNTIME_KUBERNETES_LEADER_ELECTION_RENEW_DEADLINE=80s",
 			}),
@@ -68,7 +70,6 @@ func ResourceLimits() {
 	})
 
 	E2EAfterAll(func() {
-		Expect(cluster.TriggerDeleteNamespace(TestNamespace)).To(Succeed())
 		Expect(cluster.DeleteKuma()).To(Succeed())
 	})
 
@@ -109,31 +110,27 @@ spec:
 		var memory int
 		var numServices = 5
 		var instancesPerService = 1
-		var goDebugAdded = false
 		var goMemLimitAdded = false
 
 		adjustResource := func(miliCPU, memMega int, addGoMemLimitEnv bool) {
-			printLog("adjusting control plane resource limits to cpu %dm, memory %dMi\n", miliCPU, memMega)
+			Logf("adjusting control plane resource limits to cpu %dm, memory %dMi\n", miliCPU, memMega)
 
-			patchJson := `[
-{"op": "replace", "path": "/spec/template/spec/containers/0/resources/requests/cpu", "value": "%dm"},
-{"op": "replace", "path": "/spec/template/spec/containers/0/resources/requests/memory", "value": "%dMi"},
-{"op": "replace", "path": "/spec/template/spec/containers/0/resources/limits/cpu", "value": "%dm"},
-{"op": "replace", "path": "/spec/template/spec/containers/0/resources/limits/memory", "value": "%dMi"}`
-
-			if !goDebugAdded {
-				goDebugAdded = true
-				patchJson += `,{"op": "add", "path": "/spec/template/spec/containers/0/env/-", "value": {"name": "GODEBUG", "value":"gctrace=1"}}`
+			patchJson := []string{
+				fmt.Sprintf(`{"op": "replace", "path": "/spec/template/spec/containers/0/resources/requests/cpu", "value": "%dm"}`, miliCPU),
+				fmt.Sprintf(`{"op": "replace", "path": "/spec/template/spec/containers/0/resources/requests/memory", "value": "%dMi"}`, memMega),
+				fmt.Sprintf(`{"op": "replace", "path": "/spec/template/spec/containers/0/resources/limits/cpu", "value": "%dm"}`, miliCPU),
+				fmt.Sprintf(`{"op": "replace", "path": "/spec/template/spec/containers/0/resources/limits/memory", "value": "%dMi"}`, memMega),
 			}
 
 			if addGoMemLimitEnv {
-				memLimit := memMega - 50
+				// set 90% of the container memory as GOMEMLIMIT, the remaining 10% is for the rest of the container
+				memLimit := int(float64(memMega) * 0.9)
 				if memLimit < 10 {
 					memLimit = 10
 				}
 
 				if !goMemLimitAdded {
-					patchJson += fmt.Sprintf(`,{"op": "add", "path": "/spec/template/spec/containers/0/env/-", "value": {"name": "GOMEMLIMIT", "value":"%dMiB"}}`, memLimit)
+					patchJson = append(patchJson, fmt.Sprintf(`{"op": "add", "path": "/spec/template/spec/containers/0/env/-", "value": {"name": "GOMEMLIMIT", "value":"%dMiB"}}`, memLimit))
 					goMemLimitAdded = true
 				} else {
 					//  get the existing env array, and update the existing GOMEMLIMIT
@@ -161,18 +158,17 @@ spec:
 						idxStr = "-"
 					}
 
-					patchJson += fmt.Sprintf(`,{"op": "%s", "path": "/spec/template/spec/containers/0/env/%s", "value": {"name": "GOMEMLIMIT", "value":"%dMiB"}}`,
-						op, idxStr, memLimit)
+					patchJson = append(patchJson, fmt.Sprintf(`{"op": "%s", "path": "/spec/template/spec/containers/0/env/%s", "value": {"name": "GOMEMLIMIT", "value":"%dMiB"}}`,
+						op, idxStr, memLimit))
 				}
 			}
 
-			patchJson += "]"
 			err := k8s.RunKubectlE(
 				cluster.GetTesting(),
 				cluster.GetKubectlOptions(Config.KumaNamespace),
 				"patch", "deployment", Config.KumaServiceName,
 				"--type=json",
-				"--patch", fmt.Sprintf(patchJson, miliCPU, memMega, miliCPU, memMega),
+				"--patch", fmt.Sprintf("[%s]", strings.Join(patchJson, ",")),
 			)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -186,7 +182,7 @@ spec:
 		}
 
 		deployDPs := func() {
-			printLog("deploying %d services and %d instances per service\n", numServices, instancesPerService)
+			Logf("deploying %d services and %d instances per service\n", numServices, instancesPerService)
 
 			svcGraph := graph.GenerateRandomServiceMesh(872835240, numServices, 50, instancesPerService, instancesPerService)
 
@@ -208,9 +204,8 @@ spec:
 		}
 
 		waitForDPs := func(ret chan<- bool) {
-			printLog("waiting for the data planes to become ready\n")
-			waitCh := make(chan bool)
-			go func(x chan<- bool) {
+			Logf("waiting for the data planes to become ready\n")
+			go func() {
 				expectedNumOfPods := numServices * instancesPerService
 				created := Eventually(func() error {
 					opts := cluster.GetKubectlOptions(TestNamespace)
@@ -221,16 +216,16 @@ spec:
 
 				pods, err := k8s.ListPodsE(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace), metav1.ListOptions{})
 				if err != nil {
-					printLog("failed to list pods: %v\n", err)
-					x <- false
+					Logf("failed to list pods: %v\n", err)
+					ret <- false
 					return
 				}
 
 				if created {
-					printLog("%d pods are now all created\n", expectedNumOfPods)
+					Logf("%d pods are now all created\n", expectedNumOfPods)
 				} else {
-					printLog("only %d of %d pods created\n", len(pods), expectedNumOfPods)
-					x <- created
+					Logf("only %d of %d pods created\n", len(pods), expectedNumOfPods)
+					ret <- created
 					return
 				}
 
@@ -246,29 +241,22 @@ spec:
 
 						wg.Done()
 						if available {
-							printLog("pod %s is now available\n", p.Name)
+							Logf("pod %s is now available\n", p.Name)
 						} else {
-							printLog("pod %s failed to become available\n", p.Name)
-							x <- false
+							Logf("pod %s failed to become available\n", p.Name)
+							ret <- false
 						}
 					}(&pod)
 				}
 				wg.Wait()
-				x <- true
-			}(waitCh)
-
-			go func() {
-				val := <-waitCh
-				if val {
-					printLog("data plane pods are now all available, entering the stabilization sleep")
-					time.Sleep(stabilizationSleep)
-				}
-				ret <- val
+				Logf("dataplane pods are now all available, entering the stabilization sleep")
+				time.Sleep(stabilizationSleep)
+				ret <- true
 			}()
 		}
 
 		watchControlPlane := func(ctx context.Context, errCh chan<- error) {
-			printLog("monitoring health of control plane pods for at most 10 min\n")
+			Logf("monitoring health of control plane pods for at most 10 min\n")
 
 			clientset, err := k8s.GetKubernetesClientFromOptionsE(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace))
 			Expect(err).ToNot(HaveOccurred())
@@ -296,7 +284,7 @@ spec:
 							cluster.GetKubectlOptions(Config.KumaNamespace),
 							"exec", pod.Name, "-c", "control-plane", "--", "sh", "-c", "wget -O - http://localhost:5680/metrics")
 						Expect(err).ToNot(HaveOccurred())
-						printLog("control plane metrics: %s\n", metrics)
+						Logf("control plane metrics: %s\n", metrics)
 					case e := <-watcher.ResultChan():
 						if e.Object == nil {
 							cancel()
@@ -390,6 +378,7 @@ spec:
 
 			errCh := make(chan error)
 			ctx, cancelMonitoring := context.WithCancel(context.Background())
+			defer cancelMonitoring()
 			watchControlPlane(ctx, errCh)
 
 			dpCh := make(chan bool)
@@ -398,14 +387,11 @@ spec:
 			var err error
 			select {
 			case dpRet := <-dpCh:
-				printLog("dpCh returned\n")
+				Logf("dpCh returned\n")
 				Expect(dpRet).To(BeTrue(), "data planes should be run and available")
-				break
 			case err = <-errCh:
-				printLog("errCh returned\n")
-				break
+				Logf("errCh returned\n")
 			}
-			cancelMonitoring()
 			Expect(err).ToNot(HaveOccurred(), "control plane should not crash")
 		})
 
@@ -425,17 +411,12 @@ spec:
 			var err error
 			select {
 			case <-dpCh:
-				printLog("dpCh returned\n")
-				break
+				Logf("dpCh returned\n")
 			case err = <-errCh:
-				printLog("errCh returned\n")
-				break
+				Logf("errCh returned\n")
 			}
 			cancelMonitoring()
 			Expect(err).To(HaveOccurred(), "control plane should crash with half resource")
-			if err != nil {
-				_, _ = fmt.Fprint(GinkgoWriter, err.Error())
-			}
 
 			cpPods, err := k8s.ListPodsE(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace), metav1.ListOptions{
 				LabelSelector: fmt.Sprintf("app=%s", Config.KumaServiceName),
@@ -468,11 +449,9 @@ spec:
 			var err error
 			select {
 			case <-dpCh:
-				printLog("dpCh returned\n")
-				break
+				Logf("dpCh returned\n")
 			case err = <-errCh:
-				printLog("errCh returned\n")
-				break
+				Logf("errCh returned\n")
 			}
 			cancelMonitoring()
 			Expect(err).ToNot(HaveOccurred(), "control plane should not crash")
@@ -492,13 +471,9 @@ spec:
 					_, _ = fmt.Fprintf(GinkgoWriter, "Pod %s - %s: %s\n", pod.Name, cts.Name, cts.State.String())
 				}
 			}
+
 		})
 	})
-
-}
-
-func printLog(msg string, args ...interface{}) {
-	_, _ = fmt.Fprint(GinkgoWriter, "====> "+msg, args)
 }
 
 func hasPodContainerCrashed(pod *corev1.Pod) bool {
