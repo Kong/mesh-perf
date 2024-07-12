@@ -1,9 +1,10 @@
 TERRAFORM_DIR=$(TOP)/infrastructure/$(ENV)
-TERRAFORM_ECR_DIR=$(TOP)/infrastructure/ecr
 CREATE_CLUSTER_DEPS_TARGET ?=
 DESTROY_CLUSTER_DEPS_TARGET ?=
+TERRAFORM_ECR_DIR ?=
 ifeq ($(ENV),eks)
 TERRAFORM_VARS += -var="nodes_number=$${EKS_NUM_OF_NODES:=3}"
+TERRAFORM_ECR_DIR=$(TOP)/infrastructure/$(ENV)/ecr
 CREATE_CLUSTER_DEPS_TARGET += create-ecr
 DESTROY_CLUSTER_DEPS_TARGET += destroy-ecr
 endif
