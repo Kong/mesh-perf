@@ -1,9 +1,4 @@
 terraform {
-  backend "s3" {
-    bucket = "mesh-perf-state"
-    key = "terraform.tfstate"
-    region = "us-west-1"
-  }
   required_providers {
     aws = {
       source  = "hashicorp/aws"
