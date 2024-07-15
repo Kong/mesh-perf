@@ -1,5 +1,4 @@
 KUMACTLBIN = $(TOP)/build/kong-mesh-$(PERF_TEST_MESH_VERSION)/bin/kumactl
-
 E2E_ENV_VARS += K8SCLUSTERS="mesh-perf"
 E2E_ENV_VARS += KUMA_K8S_TYPE=k3d
 E2E_ENV_VARS += TEST_ROOT="$(TOP)"
