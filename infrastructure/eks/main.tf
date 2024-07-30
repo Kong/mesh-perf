@@ -4,7 +4,7 @@ provider "aws" {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "5.7.1"
+  version = "5.9.0"
 
   name = "${var.cluster_name}-vpc"
 
@@ -31,7 +31,7 @@ module "vpc" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "20.8.5"
+  version = "20.17.2"
 
   cluster_name    = var.cluster_name
   cluster_version = "1.29"
@@ -80,7 +80,7 @@ data "aws_iam_policy" "ebs_csi_policy" {
 
 module "irsa-ebs-csi" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-  version = "5.39.0"
+  version = "5.40.0"
 
   create_role                   = true
   role_name                     = "AmazonEKSTFEBSCSIRole-${module.eks.cluster_name}"
@@ -99,31 +99,4 @@ resource "aws_eks_addon" "ebs-csi" {
     "terraform" = "true"
   }
   depends_on = [module.eks.eks_managed_node_groups]
-}
-
-module "ecr" {
-  source = "terraform-aws-modules/ecr/aws"
-  version = "2.2.0"
-  for_each = toset(["kuma-dp", "fake-service"])
-
-  repository_name = each.key
-  repository_force_delete = "true"
-
-  repository_read_write_access_arns = [module.irsa-ebs-csi.iam_role_arn]
-  repository_lifecycle_policy       = jsonencode({
-    rules = [
-      {
-        rulePriority = 1,
-        description  = "Keep last 10 images",
-        selection    = {
-          tagStatus     = "any",
-          countType     = "imageCountMoreThan",
-          countNumber   = 10
-        },
-        action = {
-          type = "expire"
-        }
-      }
-    ]
-  })
 }
