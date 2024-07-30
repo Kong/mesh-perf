@@ -172,8 +172,6 @@ spec:
 			)
 			Expect(err).ToNot(HaveOccurred())
 
-			time.Sleep(2 * time.Second)
-
 			err = k8s.RunKubectlE(
 				cluster.GetTesting(),
 				cluster.GetKubectlOptions(Config.KumaNamespace),
