@@ -104,4 +104,5 @@ var _ = ReportAfterSuite("compile report", func(ginkgoReport Report) {
 
 var (
 	_ = Describe("Simple", Simple, Ordered)
+	_ = Describe("ResourceLimits", Label("limits"), ResourceLimits, Ordered)
 )
