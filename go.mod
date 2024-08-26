@@ -8,7 +8,7 @@ require (
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/kumahq/kuma v0.0.0-20240712084326-5688bafd1f10
 	github.com/kumahq/kuma-tools v0.0.3-0.20230907092444-29e192174673
-	github.com/onsi/ginkgo/v2 v2.20.0
+	github.com/onsi/ginkgo/v2 v2.20.1
 	github.com/onsi/gomega v1.34.1
 	github.com/prometheus/client_golang v1.20.2
 	github.com/prometheus/common v0.55.0
