@@ -3,15 +3,15 @@ module github.com/kong/mesh-perf
 go 1.22.5
 
 require (
-	github.com/DataDog/datadog-api-client-go/v2 v2.29.0
-	github.com/gruntwork-io/terratest v0.47.0
+	github.com/DataDog/datadog-api-client-go/v2 v2.30.0
+	github.com/gruntwork-io/terratest v0.47.1
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/kumahq/kuma v0.0.0-20240826195609-33faf5180df0
 	github.com/kumahq/kuma-tools v0.0.3-0.20230907092444-29e192174673
 	github.com/onsi/ginkgo/v2 v2.20.2
 	github.com/onsi/gomega v1.34.2
-	github.com/prometheus/client_golang v1.20.2
-	github.com/prometheus/common v0.57.0
+	github.com/prometheus/client_golang v1.20.3
+	github.com/prometheus/common v0.58.0
 	k8s.io/apimachinery v0.31.0
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 )
@@ -123,7 +123,7 @@ require (
 	golang.org/x/crypto v0.26.0 // indirect
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56 // indirect
 	golang.org/x/net v0.28.0 // indirect
-	golang.org/x/oauth2 v0.21.0 // indirect
+	golang.org/x/oauth2 v0.22.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/sys v0.24.0 // indirect
 	golang.org/x/term v0.23.0 // indirect
