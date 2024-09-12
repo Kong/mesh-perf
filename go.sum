@@ -178,6 +178,10 @@ github.com/kumahq/kuma v0.0.0-20240712084326-5688bafd1f10 h1:nbYNUSHYX2C5mhKfJuJ
 github.com/kumahq/kuma v0.0.0-20240712084326-5688bafd1f10/go.mod h1:EwQ4u6h5m8xVUd4JnxpFT3WFTd0hy9yXkJVJMovl2FM=
 github.com/kumahq/kuma-tools v0.0.3-0.20230907092444-29e192174673 h1:uphsiyGpjOS+yXL5TkidR3yjuCoDuEfJx1HbJgnxF6o=
 github.com/kumahq/kuma-tools v0.0.3-0.20230907092444-29e192174673/go.mod h1:khap8wfiGKwcrnkGLTYQnAwQ/dPMA7BgBy3k+cHSW4E=
+github.com/kumahq/kuma-tools v0.0.3-0.20240912143232-a3e916291a77 h1:H+pLvOX6lGqNTrFZCB4Q/TcPzV0xmFlp3Rs68SvFI8g=
+github.com/kumahq/kuma-tools v0.0.3-0.20240912143232-a3e916291a77/go.mod h1:khap8wfiGKwcrnkGLTYQnAwQ/dPMA7BgBy3k+cHSW4E=
+github.com/kumahq/kuma-tools v0.0.3-0.20240916122904-1fb3d27bba76 h1:QWJ+WJmacg6j8hALb3uXFkyb2Z0cNXYFpF2pzQe2yog=
+github.com/kumahq/kuma-tools v0.0.3-0.20240916122904-1fb3d27bba76/go.mod h1:khap8wfiGKwcrnkGLTYQnAwQ/dPMA7BgBy3k+cHSW4E=
 github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0SNc=
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
 github.com/lucasb-eyer/go-colorful v1.2.0 h1:1nnpGOrhyZZuNyfu1QjKiUICQ74+3FNCN69Aj6K7nkY=
