@@ -7,7 +7,7 @@ require (
 	github.com/gruntwork-io/terratest v0.47.1
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/kumahq/kuma v0.0.0-20240712084326-5688bafd1f10
-	github.com/kumahq/kuma-tools v0.0.3-0.20230907092444-29e192174673
+	github.com/kumahq/kuma-tools v0.0.3-0.20240916122904-1fb3d27bba76
 	github.com/onsi/ginkgo/v2 v2.20.2
 	github.com/onsi/gomega v1.34.2
 	github.com/prometheus/client_golang v1.20.3

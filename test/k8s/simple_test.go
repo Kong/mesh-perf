@@ -125,12 +125,16 @@ func Simple() {
 			fakeServiceRegistry = alternativeContainerRegistry
 		}
 		Expect(svcGraph.ToYaml(&buffer, graph.ServiceConf{
-			WithReachableServices: true,
+			WithReachableServices: false,
+			WithReachableBackends: true,
+			WithKubeURIs:          true,
+			MeshServicesMode:      "Exclusive",
 			WithNamespace:         false,
 			WithMesh:              true,
 			Namespace:             TestNamespace,
 			Mesh:                  "default",
-			Image:                 fmt.Sprintf("%s/fake-service:v0.25.2", fakeServiceRegistry),
+
+			Image: fmt.Sprintf("%s/fake-service:v0.25.2", fakeServiceRegistry),
 		})).To(Succeed())
 
 		Expect(cluster.Install(YamlK8s(buffer.String()))).To(Succeed())
@@ -147,8 +151,15 @@ func Simple() {
 		promClient, err := framework.NewPromClient(fmt.Sprintf("http://%s", endpoint))
 		Expect(err).ToNot(HaveOccurred())
 
-		acks, err := framework.XdsAckRequestsReceived(promClient)
-		Expect(err).ToNot(HaveOccurred())
+		var acks int
+		Eventually(func(g Gomega) {
+			newAcks, err := framework.XdsAckRequestsReceived(promClient)
+			g.Expect(err).ToNot(HaveOccurred())
+			if acks != newAcks {
+				acks = newAcks
+				g.Expect(true).To(BeFalse(), "acks are not stable")
+			}
+		}, "2m", "5s").MustPassRepeatedly(7).Should(Succeed())
 
 		policy := `
 apiVersion: kuma.io/v1alpha1
@@ -223,8 +234,9 @@ spec:
 
 			propagationStart := time.Now()
 			Eventually(func(g Gomega) {
-				membership, err := admin.GetStats(fmt.Sprintf("cluster.%s_kuma-test_svc_80.membership_total", observable))
+				membership, err := admin.GetStats(fmt.Sprintf("cluster.default_%s_kuma-test_default_msvc_80.membership_total", observable))
 				g.Expect(err).ToNot(HaveOccurred())
+				g.Expect(membership.Stats).ToNot(BeEmpty())
 				g.Expect(membership.Stats[0].Value).To(BeNumerically("==", replicas))
 			}, "60s", "1s").Should(Succeed())
 			AddReportEntry("endpoint_propagation_duration", time.Since(propagationStart).Milliseconds())
