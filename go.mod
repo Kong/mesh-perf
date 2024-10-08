@@ -4,7 +4,7 @@ go 1.22.5
 
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.31.0
-	github.com/gruntwork-io/terratest v0.47.1
+	github.com/gruntwork-io/terratest v0.47.2
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/kumahq/kuma v0.0.0-20240826195609-33faf5180df0
 	github.com/kumahq/kuma-tools v0.0.3-0.20230907092444-29e192174673
