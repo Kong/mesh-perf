@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/ghodss/yaml"
 	"github.com/gruntwork-io/terratest/modules/logger"
+	"github.com/gruntwork-io/terratest/modules/testing"
 	"k8s.io/apimachinery/pkg/watch"
 	"os"
 	"strconv"
@@ -393,8 +394,7 @@ spec:
 			Expect(err).ToNot(HaveOccurred(), "control plane should not crash")
 		})
 
-		// half the resource, should crash without GOMEMLIMIT
-		It("should crash when deploy all services and instances with half CP resource", func() {
+		It("should crash without GOMEMLIMIT with half CP resource when deploy all services and instances", func() {
 			adjustResource(cpu/2, memory/2, false)
 
 			deployDPs()
@@ -414,25 +414,12 @@ spec:
 				Logf("errCh returned\n")
 			}
 			cancelMonitoring()
+
+			printUnavailablePods(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace), metav1.ListOptions{LabelSelector: fmt.Sprintf("app=%s", Config.KumaServiceName)})
 			Expect(err).To(HaveOccurred(), "control plane should crash with half resource")
-
-			cpPods, err := k8s.ListPodsE(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace), metav1.ListOptions{
-				LabelSelector: fmt.Sprintf("app=%s", Config.KumaServiceName),
-			})
-			Expect(err).ToNot(HaveOccurred())
-			for _, pod := range cpPods {
-				if k8s.IsPodAvailable(&pod) {
-					continue
-				}
-
-				_, _ = fmt.Fprintf(GinkgoWriter, "Pod %s: %s\n", pod.Name, pod.Status.Phase)
-				for _, cts := range pod.Status.ContainerStatuses {
-					_, _ = fmt.Fprintf(GinkgoWriter, "Pod %s - %s: %s\n", pod.Name, cts.Name, cts.State.String())
-				}
-			}
 		})
 
-		It("should not crash when control plane has GOMEMLIMIT set when all services and instances with half CP resource", func() {
+		It("should not crash when control plane has GOMEMLIMIT with half CP resource and deploy all services and instances", func() {
 			adjustResource(cpu/2, memory/2, true)
 
 			deployDPs()
@@ -451,27 +438,32 @@ spec:
 			case err = <-errCh:
 				Logf("errCh returned\n")
 			}
+
 			cancelMonitoring()
+			printUnavailablePods(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace), metav1.ListOptions{})
 			Expect(err).ToNot(HaveOccurred(), "control plane should not crash")
-			if err != nil {
-				_, _ = fmt.Fprint(GinkgoWriter, err.Error())
-			}
-
-			dpPods, err := k8s.ListPodsE(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace), metav1.ListOptions{})
-			Expect(err).ToNot(HaveOccurred())
-			for _, pod := range dpPods {
-				if k8s.IsPodAvailable(&pod) {
-					continue
-				}
-
-				_, _ = fmt.Fprintf(GinkgoWriter, "Pod %s: %s\n", pod.Name, pod.Status.Phase)
-				for _, cts := range pod.Status.ContainerStatuses {
-					_, _ = fmt.Fprintf(GinkgoWriter, "Pod %s - %s: %s\n", pod.Name, cts.Name, cts.State.String())
-				}
-			}
-
 		})
 	})
+}
+
+func printUnavailablePods(t testing.TestingT, kubectlOptions *k8s.KubectlOptions, listOpts metav1.ListOptions) {
+	pods, err := k8s.ListPodsE(t, kubectlOptions, listOpts)
+
+	if err != nil {
+		Logf("failed to list pods: %v\n", err)
+		return
+	}
+
+	for _, pod := range pods {
+		if k8s.IsPodAvailable(&pod) {
+			continue
+		}
+
+		Logf("Pod %s: %s\n", pod.Name, pod.Status.Phase)
+		for _, cts := range pod.Status.ContainerStatuses {
+			Logf("Pod %s - %s: %s\n", pod.Name, cts.Name, cts.State.String())
+		}
+	}
 }
 
 func hasPodContainerCrashed(pod *corev1.Pod) bool {
