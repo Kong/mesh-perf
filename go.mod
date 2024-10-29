@@ -12,7 +12,7 @@ require (
 	github.com/onsi/gomega v1.34.2
 	github.com/prometheus/client_golang v1.20.5
 	github.com/prometheus/common v0.60.1
-	k8s.io/apimachinery v0.31.1
+	k8s.io/apimachinery v0.31.2
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8
 )
 
