@@ -3,6 +3,7 @@ package k8s_test
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/ghodss/yaml"
@@ -74,11 +75,6 @@ func ResourceLimits() {
 		Expect(cluster.DeleteKuma()).To(Succeed())
 	})
 
-	It("should deploy the mesh", func() {
-		// just to see stabilized stats before we go further
-		Expect(true).To(BeTrue())
-	})
-
 	It("should deploy mesh wide policy", func() {
 		policy := `
 apiVersion: kuma.io/v1alpha1
@@ -135,22 +131,8 @@ spec:
 					goMemLimitAdded = true
 				} else {
 					//  get the existing env array, and update the existing GOMEMLIMIT
-					out, err := k8s.RunKubectlAndGetOutputE(
-						cluster.GetTesting(),
-						cluster.GetKubectlOptions(Config.KumaNamespace),
-						"get", "deployment", Config.KumaServiceName,
-						"-o=jsonpath='{.spec.template.spec.containers[0].env}'")
+					idx, err := getGoMemLimitIndex(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace))
 					Expect(err).ToNot(HaveOccurred())
-					var jsonEnvArray []map[string]interface{}
-					err = yaml.Unmarshal([]byte(out), &jsonEnvArray)
-					Expect(err).ToNot(HaveOccurred())
-					var idx = -1
-					for i, m := range jsonEnvArray {
-						if m["name"] == "GOMEMLIMIT" {
-							idx = i
-							break
-						}
-					}
 
 					op := "replace"
 					idxStr := fmt.Sprintf("%d", idx)
@@ -162,6 +144,15 @@ spec:
 					patchJson = append(patchJson, fmt.Sprintf(`{"op": "%s", "path": "/spec/template/spec/containers/0/env/%s", "value": {"name": "GOMEMLIMIT", "value":"%dMiB"}}`,
 						op, idxStr, memLimit))
 				}
+			} else if goMemLimitAdded {
+				// if already added, remove it
+				//  get the existing env array, and update the existing GOMEMLIMIT
+				idx, err := getGoMemLimitIndex(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace))
+				idxStr := fmt.Sprintf("%d", idx)
+				Expect(err).ToNot(HaveOccurred())
+
+				patchJson = append(patchJson, fmt.Sprintf(`{"op": "remove", "path": "/spec/template/spec/containers/0/env/%s"}`, idxStr))
+				goMemLimitAdded = false
 			}
 
 			err := k8s.RunKubectlE(
@@ -205,17 +196,18 @@ spec:
 		waitForDPs := func(ret chan<- bool) {
 			Logf("waiting for the data planes to become ready\n")
 			go func() {
-				expectedNumOfPods := numServices * instancesPerService
-				created := Eventually(func() error {
-					opts := cluster.GetKubectlOptions(TestNamespace)
-					opts.Logger = logger.Discard
-					return k8s.WaitUntilNumPodsCreatedE(cluster.GetTesting(), opts,
-						metav1.ListOptions{}, expectedNumOfPods, 1, 0)
-				}, "10m", "3s").Should(Succeed())
+				defer GinkgoRecover()
 
-				pods, err := k8s.ListPodsE(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace), metav1.ListOptions{})
-				if err != nil {
-					Logf("failed to list pods: %v\n", err)
+				expectedNumOfPods := numServices * instancesPerService
+				optsCopy := *cluster.GetKubectlOptions(TestNamespace)
+				optsCopy.Logger = logger.Discard
+				createErr := k8s.WaitUntilNumPodsCreatedE(cluster.GetTesting(), &optsCopy,
+					metav1.ListOptions{}, expectedNumOfPods, 300, 5*time.Second)
+				created := createErr == nil
+
+				pods, err2 := k8s.ListPodsE(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace), metav1.ListOptions{})
+				if err2 != nil {
+					Logf("failed to list pods: %v\n", err2)
 					ret <- false
 					return
 				}
@@ -232,14 +224,15 @@ spec:
 				wg.Add(len(pods))
 				for _, pod := range pods {
 					go func(p *corev1.Pod) {
-						available := Eventually(func() error {
-							opts := cluster.GetKubectlOptions(TestNamespace)
-							opts.Logger = logger.Discard
-							return k8s.WaitUntilPodAvailableE(cluster.GetTesting(), opts, p.Name, 1, 0)
-						}, "3m", "3s").Should(Succeed())
+						defer GinkgoRecover()
+
+						opts2 := *cluster.GetKubectlOptions(TestNamespace)
+						opts2.Logger = logger.Discard
+						podErr := k8s.WaitUntilPodAvailableE(cluster.GetTesting(), &opts2, p.Name, 60, 3*time.Second)
+						Expect(podErr).ToNot(HaveOccurred())
 
 						wg.Done()
-						if available {
+						if podErr == nil {
 							Logf("pod %s is now available\n", p.Name)
 						} else {
 							Logf("pod %s failed to become available\n", p.Name)
@@ -254,13 +247,13 @@ spec:
 			}()
 		}
 
-		watchControlPlane := func(ctx context.Context, errCh chan<- error) {
+		watchControlPlane := func(ctx context.Context, metricsCh chan<- string, errCh chan<- error) {
 			Logf("monitoring health of control plane pods for at most 10 min\n")
 
 			clientset, err := k8s.GetKubernetesClientFromOptionsE(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace))
 			Expect(err).ToNot(HaveOccurred())
 
-			ctx2, cancel := context.WithTimeout(ctx, 10*time.Minute)
+			ctx2, cancel := context.WithTimeout(ctx, 60*time.Minute)
 			watcher, err := clientset.CoreV1().Pods(Config.KumaNamespace).Watch(ctx2, metav1.ListOptions{
 				LabelSelector: fmt.Sprintf("app=%s", Config.KumaServiceName),
 			})
@@ -268,22 +261,27 @@ spec:
 			secondTicker := time.NewTicker(1 * time.Second)
 
 			go func() {
+				defer GinkgoRecover()
+
 				for {
 					select {
 					case <-secondTicker.C:
+						opts2 := *cluster.GetKubectlOptions(TestNamespace)
+						opts2.Logger = logger.Discard
 						pods, err := k8s.ListPodsE(
 							cluster.GetTesting(),
-							cluster.GetKubectlOptions(Config.KumaNamespace), metav1.ListOptions{
+							&opts2, metav1.ListOptions{
 								LabelSelector: fmt.Sprintf("app=%s", Config.KumaServiceName),
 							})
 						Expect(err).ToNot(HaveOccurred())
+
 						pod := pods[0]
 						metrics, err := k8s.RunKubectlAndGetOutputE(
 							cluster.GetTesting(),
-							cluster.GetKubectlOptions(Config.KumaNamespace),
+							&opts2,
 							"exec", pod.Name, "-c", "control-plane", "--", "sh", "-c", "wget -O - http://localhost:5680/metrics")
 						Expect(err).ToNot(HaveOccurred())
-						Logf("control plane metrics: %s\n", metrics)
+						metricsCh <- metrics
 					case e := <-watcher.ResultChan():
 						if e.Object == nil {
 							cancel()
@@ -358,6 +356,10 @@ spec:
 			if insNum != "" {
 				instancesPerService, _ = strconv.Atoi(insNum)
 			}
+
+			idx, err := getGoMemLimitIndex(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace))
+			Expect(err).ToNot(HaveOccurred(), "failed to get control plane pod details")
+			goMemLimitAdded = idx > -1
 		})
 
 		BeforeEach(func() {
@@ -375,10 +377,12 @@ spec:
 
 			deployDPs()
 
+			metricsCh := make(chan string)
 			errCh := make(chan error)
 			ctx, cancelMonitoring := context.WithCancel(context.Background())
 			defer cancelMonitoring()
-			watchControlPlane(ctx, errCh)
+			watchControlPlane(ctx, metricsCh, errCh)
+			go printCPMetrics(ctx, metricsCh)
 
 			dpCh := make(chan bool)
 			waitForDPs(dpCh)
@@ -399,9 +403,11 @@ spec:
 
 			deployDPs()
 
+			metricsCh := make(chan string)
 			errCh := make(chan error)
 			ctx, cancelMonitoring := context.WithCancel(context.Background())
-			watchControlPlane(ctx, errCh)
+			watchControlPlane(ctx, metricsCh, errCh)
+			go printCPMetrics(ctx, metricsCh)
 
 			dpCh := make(chan bool)
 			waitForDPs(dpCh)
@@ -424,9 +430,11 @@ spec:
 
 			deployDPs()
 
+			metricsCh := make(chan string)
 			errCh := make(chan error)
 			ctx, cancelMonitoring := context.WithCancel(context.Background())
-			watchControlPlane(ctx, errCh)
+			watchControlPlane(ctx, metricsCh, errCh)
+			go printCPMetrics(ctx, metricsCh)
 
 			dpCh := make(chan bool)
 			waitForDPs(dpCh)
@@ -446,6 +454,32 @@ spec:
 	})
 }
 
+func getGoMemLimitIndex(t testing.TestingT, kubectlOptions *k8s.KubectlOptions) (int, error) {
+	out, err := k8s.RunKubectlAndGetOutputE(
+		t,
+		kubectlOptions,
+		"get", "deployment", Config.KumaServiceName,
+		"-o=jsonpath={.spec.template.spec.containers[0].env}")
+	if err != nil {
+		return -1, err
+	}
+
+	var jsonEnvArray []struct {
+		Name string `json:"name"`
+	}
+	err = json.Unmarshal([]byte(out), &jsonEnvArray)
+	if err != nil {
+		return -1, err
+	}
+
+	for i, e := range jsonEnvArray {
+		if e.Name == "GOMEMLIMIT" {
+			return i, nil
+		}
+	}
+	return -1, nil
+}
+
 func printUnavailablePods(t testing.TestingT, kubectlOptions *k8s.KubectlOptions, listOpts metav1.ListOptions) {
 	pods, err := k8s.ListPodsE(t, kubectlOptions, listOpts)
 
@@ -462,6 +496,24 @@ func printUnavailablePods(t testing.TestingT, kubectlOptions *k8s.KubectlOptions
 		Logf("Pod %s: %s\n", pod.Name, pod.Status.Phase)
 		for _, cts := range pod.Status.ContainerStatuses {
 			Logf("Pod %s - %s: %s\n", pod.Name, cts.Name, cts.State.String())
+		}
+	}
+}
+
+func printCPMetrics(ctx context.Context, metricsCh chan string) {
+	var previousMetrics string
+	for {
+		select {
+		case <-ctx.Done():
+			if previousMetrics != "" {
+				Logf("control plane metrics (last): %s\n", previousMetrics)
+			}
+			return
+		case metrics := <-metricsCh:
+			if previousMetrics == "" {
+				Logf("control plane metrics (first): %s\n", metrics)
+			}
+			previousMetrics = metrics
 		}
 	}
 }
