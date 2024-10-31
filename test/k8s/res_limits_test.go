@@ -248,7 +248,7 @@ spec:
 		}
 
 		watchControlPlane := func(ctx context.Context, metricsCh chan<- string, errCh chan<- error) {
-			Logf("monitoring health of control plane pods for at most 10 min\n")
+			Logf("monitoring health of control plane pods for at most 60 min\n")
 
 			clientset, err := k8s.GetKubernetesClientFromOptionsE(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace))
 			Expect(err).ToNot(HaveOccurred())
