@@ -275,6 +275,9 @@ spec:
 							})
 						Expect(err).ToNot(HaveOccurred())
 
+						if len(pods) < 1 {
+							continue
+						}
 						pod := pods[0]
 						metrics, err := k8s.RunKubectlAndGetOutputE(
 							cluster.GetTesting(),
@@ -370,7 +373,7 @@ spec:
 			Expect(cluster.DeleteNamespace(TestNamespace)).To(Succeed())
 		})
 
-		// should not crash, dump memory usage
+		// should not crash, dump memory usage (so we need to set reasonable services and instance numbers before running the test!)
 		It("should deploy all services and instances", func() {
 
 			adjustResource(cpu, memory, false)
