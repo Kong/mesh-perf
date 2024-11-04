@@ -112,12 +112,30 @@ spec:
 
 		adjustResource := func(miliCPU, memMega int, addGoMemLimitEnv bool) {
 			Logf("adjusting control plane resource limits to cpu %dm, memory %dMi\n", miliCPU, memMega)
+			kumaNsOptions := cluster.GetKubectlOptions(Config.KumaNamespace)
+
+			out, err := k8s.RunKubectlAndGetOutputE(
+				cluster.GetTesting(), kumaNsOptions,
+				"get", "deployment", Config.KumaServiceName,
+				"-o=jsonpath={.spec.template.spec.containers[0]}")
+			Expect(err).ToNot(HaveOccurred())
+
+			var container corev1.Container
+			err = json.Unmarshal([]byte(out), &container)
+			Expect(err).ToNot(HaveOccurred())
 
 			patchJson := []string{
 				fmt.Sprintf(`{"op": "replace", "path": "/spec/template/spec/containers/0/resources/requests/cpu", "value": "%dm"}`, miliCPU),
 				fmt.Sprintf(`{"op": "replace", "path": "/spec/template/spec/containers/0/resources/requests/memory", "value": "%dMi"}`, memMega),
 				fmt.Sprintf(`{"op": "replace", "path": "/spec/template/spec/containers/0/resources/limits/cpu", "value": "%dm"}`, miliCPU),
 				fmt.Sprintf(`{"op": "replace", "path": "/spec/template/spec/containers/0/resources/limits/memory", "value": "%dMi"}`, memMega),
+			}
+
+			if container.ReadinessProbe != nil {
+				patchJson = append(patchJson, `{"op": "remove", "path": "/spec/template/spec/containers/0/readinessProbe"}`)
+			}
+			if container.LivenessProbe != nil {
+				patchJson = append(patchJson, `{"op": "remove", "path": "/spec/template/spec/containers/0/livenessProbe"}`)
 			}
 
 			if addGoMemLimitEnv {
@@ -132,7 +150,7 @@ spec:
 					goMemLimitAdded = true
 				} else {
 					//  get the existing env array, and update the existing GOMEMLIMIT
-					idx, err := getGoMemLimitIndex(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace))
+					idx, err := getGoMemLimitIndex(cluster.GetTesting(), kumaNsOptions)
 					Expect(err).ToNot(HaveOccurred())
 
 					op := "replace"
@@ -148,7 +166,8 @@ spec:
 			} else if goMemLimitAdded {
 				// if already added, remove it
 				//  get the existing env array, and update the existing GOMEMLIMIT
-				idx, err := getGoMemLimitIndex(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace))
+
+				idx, err := getGoMemLimitIndex(cluster.GetTesting(), kumaNsOptions)
 				idxStr := fmt.Sprintf("%d", idx)
 				Expect(err).ToNot(HaveOccurred())
 
@@ -156,9 +175,9 @@ spec:
 				goMemLimitAdded = false
 			}
 
-			err := k8s.RunKubectlE(
+			err = k8s.RunKubectlE(
 				cluster.GetTesting(),
-				cluster.GetKubectlOptions(Config.KumaNamespace),
+				kumaNsOptions,
 				"patch", "deployment", Config.KumaServiceName,
 				"--type=json",
 				"--patch", fmt.Sprintf("[%s]", strings.Join(patchJson, ",")),
@@ -167,7 +186,7 @@ spec:
 
 			err = k8s.RunKubectlE(
 				cluster.GetTesting(),
-				cluster.GetKubectlOptions(Config.KumaNamespace),
+				kumaNsOptions,
 				"rollout", "status", "deployment", Config.KumaServiceName)
 			Expect(err).ToNot(HaveOccurred())
 		}
@@ -312,23 +331,12 @@ spec:
 							continue
 						}
 
-						args := []string{"logs", "-c", "control-plane", pod.Name, "--tail", "500"}
-						if hasPodContainerCrashed(pod) {
-							args = append(args, "-p")
-						}
-
-						podLogs, err := k8s.RunKubectlAndGetOutputE(
-							cluster.GetTesting(),
-							cluster.GetKubectlOptions(Config.KumaNamespace),
-							args...)
-						Expect(err).ToNot(HaveOccurred())
-
 						y, err := yaml.Marshal(pod)
 						if err != nil {
 							y = []byte(fmt.Sprintf("failed to marshal pod yaml: %v", err))
 						}
-						errCh <- fmt.Errorf("pod '%s' failed in phase '%s'\npod yaml: %s, pod logs: %s",
-							pod.Name, pod.Status.Phase, y, podLogs)
+						errCh <- fmt.Errorf("pod '%s' failed in phase '%s'\npod yaml: %s",
+							pod.Name, pod.Status.Phase, y)
 						watcher.Stop()
 						return
 					case <-ctx2.Done():
@@ -402,7 +410,7 @@ spec:
 			Expect(err).ToNot(HaveOccurred(), "control plane should not crash")
 		})
 
-		It("should crash without GOMEMLIMIT with half CP resource when deploy all services and instances", func() {
+		It("should be OOM-killed without GOMEMLIMIT with half CP resource when deploy all services and instances", func() {
 			adjustResource(cpu/2, memory/2, false)
 
 			deployDPs()
@@ -426,7 +434,7 @@ spec:
 			cancelMonitoring()
 
 			printUnavailablePods(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace), metav1.ListOptions{LabelSelector: fmt.Sprintf("app=%s", Config.KumaServiceName)})
-			Expect(err).To(HaveOccurred(), "control plane should crash with half resource")
+			Expect(err.Error()).To(ContainSubstring("OOMKilled"), "control plane should crash with OOM Killed with half resource")
 		})
 
 		It("should not crash when control plane has GOMEMLIMIT with half CP resource and deploy all services and instances", func() {
@@ -520,14 +528,4 @@ func printCPMetrics(ctx context.Context, metricsCh chan string) {
 			previousMetrics = metrics
 		}
 	}
-}
-
-func hasPodContainerCrashed(pod *corev1.Pod) bool {
-	for _, cts := range pod.Status.ContainerStatuses {
-		if cts.RestartCount > 0 {
-			return true
-		}
-	}
-
-	return false
 }
