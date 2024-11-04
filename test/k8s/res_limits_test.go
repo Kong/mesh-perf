@@ -26,6 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/kong/mesh-perf/test/framework"
+	"github.com/kong/mesh-perf/test/framework/silent_kubectl"
 )
 
 func ResourceLimits() {
@@ -201,11 +202,11 @@ spec:
 				expectedNumOfPods := numServices * instancesPerService
 				optsCopy := *cluster.GetKubectlOptions(TestNamespace)
 				optsCopy.Logger = logger.Discard
-				createErr := k8s.WaitUntilNumPodsCreatedE(cluster.GetTesting(), &optsCopy,
+				createErr := silent_kubectl.WaitUntilNumPodsCreatedE(cluster.GetTesting(), &optsCopy,
 					metav1.ListOptions{}, expectedNumOfPods, 300, 5*time.Second)
 				created := createErr == nil
 
-				pods, err2 := k8s.ListPodsE(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace), metav1.ListOptions{})
+				pods, err2 := silent_kubectl.ListPodsE(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace), metav1.ListOptions{})
 				if err2 != nil {
 					Logf("failed to list pods: %v\n", err2)
 					ret <- false
@@ -228,7 +229,7 @@ spec:
 
 						opts2 := *cluster.GetKubectlOptions(TestNamespace)
 						opts2.Logger = logger.Discard
-						podErr := k8s.WaitUntilPodAvailableE(cluster.GetTesting(), &opts2, p.Name, 60, 3*time.Second)
+						podErr := silent_kubectl.WaitUntilPodAvailableE(cluster.GetTesting(), &opts2, p.Name, 60, 3*time.Second)
 						Expect(podErr).ToNot(HaveOccurred())
 
 						wg.Done()
@@ -250,7 +251,7 @@ spec:
 		watchControlPlane := func(ctx context.Context, metricsCh chan<- string, errCh chan<- error) {
 			Logf("monitoring health of control plane pods for at most 60 min\n")
 
-			clientset, err := k8s.GetKubernetesClientFromOptionsE(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace))
+			clientset, err := silent_kubectl.GetKubernetesClientFromOptionsE(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace))
 			Expect(err).ToNot(HaveOccurred())
 
 			ctx2, cancel := context.WithTimeout(ctx, 60*time.Minute)
@@ -268,7 +269,7 @@ spec:
 					case <-secondTicker.C:
 						opts2 := *cluster.GetKubectlOptions(TestNamespace)
 						opts2.Logger = logger.Discard
-						pods, err := k8s.ListPodsE(
+						pods, err := silent_kubectl.ListPodsE(
 							cluster.GetTesting(),
 							&opts2, metav1.ListOptions{
 								LabelSelector: fmt.Sprintf("app=%s", Config.KumaServiceName),
@@ -311,7 +312,7 @@ spec:
 							continue
 						}
 
-						args := []string{"logs", "-c", "control-plane", pod.Name}
+						args := []string{"logs", "-c", "control-plane", pod.Name, "--tail", "500"}
 						if hasPodContainerCrashed(pod) {
 							args = append(args, "-p")
 						}
@@ -326,7 +327,7 @@ spec:
 						if err != nil {
 							y = []byte(fmt.Sprintf("failed to marshal pod yaml: %v", err))
 						}
-						errCh <- fmt.Errorf("pod '%s' failed in phase '%s'; pod yaml: %s, pod logs: %s",
+						errCh <- fmt.Errorf("pod '%s' failed in phase '%s'\npod yaml: %s, pod logs: %s",
 							pod.Name, pod.Status.Phase, y, podLogs)
 						watcher.Stop()
 						return
