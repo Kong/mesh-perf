@@ -110,7 +110,7 @@ spec:
 		var instancesPerService = 1
 		var goMemLimitAdded = false
 
-		adjustResource := func(miliCPU, memMega int, addGoMemLimitEnv bool) {
+		adjustResource := func(miliCPU, memMega int, addGoMemLimitEnv bool, waitForComplete bool) {
 			Logf("adjusting control plane resource limits to cpu %dm, memory %dMi\n", miliCPU, memMega)
 			kumaNsOptions := cluster.GetKubectlOptions(Config.KumaNamespace)
 
@@ -184,11 +184,13 @@ spec:
 			)
 			Expect(err).ToNot(HaveOccurred())
 
-			err = k8s.RunKubectlE(
-				cluster.GetTesting(),
-				kumaNsOptions,
-				"rollout", "status", "deployment", Config.KumaServiceName)
-			Expect(err).ToNot(HaveOccurred())
+			if waitForComplete {
+				err = k8s.RunKubectlE(
+					cluster.GetTesting(),
+					kumaNsOptions,
+					"rollout", "status", "deployment", Config.KumaServiceName)
+				Expect(err).ToNot(HaveOccurred())
+			}
 		}
 
 		deployDPs := func() {
@@ -222,7 +224,7 @@ spec:
 				optsCopy := *cluster.GetKubectlOptions(TestNamespace)
 				optsCopy.Logger = logger.Discard
 				createErr := silent_kubectl.WaitUntilNumPodsCreatedE(cluster.GetTesting(), &optsCopy,
-					metav1.ListOptions{}, expectedNumOfPods, 300, 5*time.Second)
+					metav1.ListOptions{}, expectedNumOfPods, 100, 5*time.Second)
 				created := createErr == nil
 
 				pods, err2 := silent_kubectl.ListPodsE(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace), metav1.ListOptions{})
@@ -295,16 +297,30 @@ spec:
 							})
 						Expect(err).ToNot(HaveOccurred())
 
+						// find a ready pod and for longer than 10s
 						if len(pods) < 1 {
 							continue
 						}
-						pod := pods[0]
+
+						var metricsPod *corev1.Pod
+						for _, pod := range pods {
+							p := pod
+							if k8s.IsPodAvailable(&p) && time.Since(p.CreationTimestamp.Time) > 15*time.Second {
+								metricsPod = &p
+								break
+							}
+						}
+						if metricsPod == nil {
+							continue
+						}
+
 						metrics, err := k8s.RunKubectlAndGetOutputE(
 							cluster.GetTesting(),
 							&opts2,
-							"exec", pod.Name, "-c", "control-plane", "--", "sh", "-c", "wget -O - http://localhost:5680/metrics")
-						Expect(err).ToNot(HaveOccurred())
-						metricsCh <- metrics
+							"exec", metricsPod.Name, "-c", "control-plane", "--", "sh", "-c", "wget -O - http://localhost:5680/metrics")
+						if err == nil {
+							metricsCh <- metrics
+						}
 					case e := <-watcher.ResultChan():
 						if e.Object == nil {
 							cancel()
@@ -382,11 +398,13 @@ spec:
 			Expect(cluster.DeleteNamespace(TestNamespace)).To(Succeed())
 		})
 
-		// should not crash, dump memory usage (so we need to set reasonable services and instance numbers before running the test!)
+		// should not crash, dump memory usage (so we need to set reasonable number of services and instance numbers before running the test!)
+		// by reasonable, it means the CP can support these numbers and it should crash when memory is set to half
 		It("should deploy all services and instances", func() {
+			By("Scale up the CP using full resources")
+			adjustResource(cpu, memory, false, true)
 
-			adjustResource(cpu, memory, false)
-
+			By("Deploy all the DPs")
 			deployDPs()
 
 			metricsCh := make(chan string)
@@ -411,54 +429,62 @@ spec:
 		})
 
 		It("should be OOM-killed without GOMEMLIMIT with half CP resource when deploy all services and instances", func() {
-			adjustResource(cpu/2, memory/2, false)
+			By("Scale up the CP using full resources")
+			adjustResource(cpu, memory, false, true)
 
+			By("Deploy all the DPs")
 			deployDPs()
+			dpCh := make(chan bool)
+			waitForDPs(dpCh)
+			dpHealth := <-dpCh
+			Expect(dpHealth).To(BeTrue(), "data planes should be run and available")
+
+			By("Scale down the CP using 1/2 memory resources")
+			adjustResource(cpu, memory/2, false, false)
 
 			metricsCh := make(chan string)
 			errCh := make(chan error)
-			ctx, cancelMonitoring := context.WithCancel(context.Background())
+			ctx, cancelMonitoring := context.WithTimeout(context.Background(), 3*time.Minute)
 			watchControlPlane(ctx, metricsCh, errCh)
 			go printCPMetrics(ctx, metricsCh)
 
-			dpCh := make(chan bool)
-			waitForDPs(dpCh)
-
 			var err error
 			select {
-			case <-dpCh:
-				Logf("dpCh returned\n")
+			case <-ctx.Done():
+				cancelMonitoring()
+				return
 			case err = <-errCh:
-				Logf("errCh returned\n")
+				cancelMonitoring()
+				printUnavailablePods(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace), metav1.ListOptions{LabelSelector: fmt.Sprintf("app=%s", Config.KumaServiceName)})
+				Expect(err.Error()).To(ContainSubstring("OOMKilled"), "control plane should crash with OOM Killed with half resource")
 			}
-			cancelMonitoring()
-
-			printUnavailablePods(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace), metav1.ListOptions{LabelSelector: fmt.Sprintf("app=%s", Config.KumaServiceName)})
-			Expect(err.Error()).To(ContainSubstring("OOMKilled"), "control plane should crash with OOM Killed with half resource")
 		})
 
 		It("should not crash when control plane has GOMEMLIMIT with half CP resource and deploy all services and instances", func() {
-			adjustResource(cpu/2, memory/2, true)
+			By("Scale up the CP using full resources")
+			adjustResource(cpu, memory, true, true)
 
+			By("Deploy all the DPs")
 			deployDPs()
+			dpCh := make(chan bool)
+			waitForDPs(dpCh)
+			dpHealth := <-dpCh
+			Expect(dpHealth).To(BeTrue(), "data planes should be run and available")
+
+			By("Scale down the CP using 1/2 memory resources and GOMEMLIMIT env")
+			adjustResource(cpu, memory/2, true, false)
 
 			metricsCh := make(chan string)
 			errCh := make(chan error)
-			ctx, cancelMonitoring := context.WithCancel(context.Background())
+			ctx, cancelMonitoring := context.WithTimeout(context.Background(), 3*time.Minute)
 			watchControlPlane(ctx, metricsCh, errCh)
 			go printCPMetrics(ctx, metricsCh)
 
-			dpCh := make(chan bool)
-			waitForDPs(dpCh)
-
 			var err error
 			select {
-			case <-dpCh:
-				Logf("dpCh returned\n")
+			case <-ctx.Done():
 			case err = <-errCh:
-				Logf("errCh returned\n")
 			}
-
 			cancelMonitoring()
 			printUnavailablePods(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace), metav1.ListOptions{})
 			Expect(err).ToNot(HaveOccurred(), "control plane should not crash")
