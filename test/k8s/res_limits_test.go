@@ -451,13 +451,11 @@ spec:
 			var err error
 			select {
 			case <-ctx.Done():
-				cancelMonitoring()
-				return
 			case err = <-errCh:
-				cancelMonitoring()
-				printUnavailablePods(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace), metav1.ListOptions{LabelSelector: fmt.Sprintf("app=%s", Config.KumaServiceName)})
-				Expect(err.Error()).To(ContainSubstring("OOMKilled"), "control plane should crash with OOM Killed with half resource")
 			}
+			cancelMonitoring()
+			printUnavailablePods(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace), metav1.ListOptions{LabelSelector: fmt.Sprintf("app=%s", Config.KumaServiceName)})
+			Expect(err.Error()).To(ContainSubstring("OOMKilled"), "control plane should crash with OOM Killed with half resource")
 		})
 
 		It("should not crash when control plane has GOMEMLIMIT with half CP resource and deploy all services and instances", func() {
