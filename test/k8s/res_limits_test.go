@@ -106,7 +106,7 @@ spec:
 	Context("load", func() {
 		var cpu int
 		var maxMemory int
-		var minimalMemoryRequirement int
+		var minimalMemoryRequired int
 		var ranDuraionBeforeOOM time.Duration
 		var numServices = 5
 		var instancesPerService = 1
@@ -449,26 +449,26 @@ spec:
 				adjustResource(cpu, maxMemory, false, true)
 			}
 
-			minimalMemoryRequirement = lastMemory
-			Expect(minimalMemoryRequirement).To(BeNumerically(">", 0), "minimal memory should be greater than 0")
-			Expect(minimalMemoryRequirement).To(BeNumerically("<", maxMemory), "memory limit should fulfill CP resource requirement")
+			minimalMemoryRequired = lastMemory
+			Expect(minimalMemoryRequired).To(BeNumerically(">", 0), "minimal memory should be greater than 0")
+			Expect(minimalMemoryRequired).To(BeNumerically("<", maxMemory), "memory limit should fulfill CP resource requirement")
 		})
 
 		// we need to set reasonable number of services and instance numbers before decreasing the memory
 		// by reasonable, it means the CP can support these numbers, and it should crash when memory is set to half
 		It("should be OOM-killed without GOMEMLIMIT", func() {
-			Expect(minimalMemoryRequirement).To(BeNumerically(">", 0, "load and get the minimal memory requirement should before this test"))
+			Expect(minimalMemoryRequired).To(BeNumerically(">", 0), "load and get the minimal memory requirement should before this test")
 
-			err, runDuration := scaleCPToOOMKilled(minimalMemoryRequirement, false)
+			err, runDuration := scaleCPToOOMKilled(minimalMemoryRequired, false)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("OOMKilled"), "control plane should crash with OOM Killed")
 			ranDuraionBeforeOOM = runDuration
 		})
 
 		It("should crash slower or not crash when control plane has GOMEMLIMIT", func() {
-			Expect(ranDuraionBeforeOOM).To(BeNumerically(">", 0, "control plane should crash with OOM Killed before this test"))
+			Expect(ranDuraionBeforeOOM).To(BeNumerically(">", 0), "control plane should crash with OOM Killed before this test")
 
-			err, runDuration := scaleCPToOOMKilled(minimalMemoryRequirement, true)
+			err, runDuration := scaleCPToOOMKilled(minimalMemoryRequired, true)
 
 			if err == nil {
 				Expect(err).ToNot(HaveOccurred())
