@@ -1,3 +1,4 @@
+// nolint:all  // code here is extracted and revised from github.com/gruntwork-io/terratest
 package silent_kubectl
 
 import (
