@@ -14,7 +14,7 @@ import (
 	"github.com/kong/mesh-perf/pkg/graph/apis"
 )
 
-// Generator for https://github.com/lahabana/api-play
+// Generator is a Kubernetes resource generator
 type generator struct {
 	asStatefulSet          bool
 	namespace              string
