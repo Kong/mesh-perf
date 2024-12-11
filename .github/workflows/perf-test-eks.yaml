@@ -74,6 +74,19 @@ jobs:
             ${{ secrets.KMESH_LICENSE_JSON }}
         run: |
           KMESH_LICENSE=<(printenv KMESH_LICENSE_JSON) PERF_TEST_MESH_VERSION="${{ env.PERF_TEST_MESH_VERSION }}" make run
+      - name: Run resource limits tests
+        env:
+          # when limit memory to 256Mi, it should support 100 dps without GOMEMLIMIT
+          # when limit memory to 128Mi, it should support 100 dps with GOMEMLIMIT
+          PERF_LIMIT_MEGA_MEMORY: 256
+          # 100 dp = 20x5
+          PERF_TEST_INSTANCES_PER_SERVICE: 5
+          PERF_TEST_NUM_SERVICES: 20
+          PERF_TEST_STABILIZATION_SLEEP: 30s
+          KMESH_LICENSE_JSON: |
+            ${{ secrets.KMESH_LICENSE_JSON }}
+        run: |
+          KMESH_LICENSE=<(printenv KMESH_LICENSE_JSON) PERF_TEST_MESH_VERSION="${{ env.PERF_TEST_MESH_VERSION }}" make run/limits | tee /tmp/limits.out
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -85,6 +98,11 @@ jobs:
         with:
           name: test-reports
           path: /tmp/perf-test-reports
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: limits-output
+          path: /tmp/limits.out
       - name: submit logs to Datadog
         if: always()
         env:
