@@ -405,16 +405,21 @@ spec:
 					action = "increase"
 					adjustment = (knownUpperBound - lastMemory) / 2
 					currentMemory = lastMemory + adjustment
+					if adjustment <= 20 {
+						Logf("There is no more space to %s, so %d is the target usage", action, lastMemory)
+						break
+					}
+					lastMemory = currentMemory
 				case -1:
 					action = "reduce"
 					adjustment = (lastMemory - knownLowerBound) / 2
 					currentMemory = lastMemory - adjustment
+					lastMemory = currentMemory
+					if adjustment <= 20 {
+						Logf("There is no more space to %s, so %d is the target usage", action, lastMemory)
+						break
+					}
 				}
-				if adjustment <= 25 {
-					Logf("There is no more space to %s, so %d is the target usage", action, lastMemory)
-					break
-				}
-				lastMemory = currentMemory
 
 				By(fmt.Sprintf("Trying to use memory %dMi on the control plane", currentMemory))
 				adjustResource(cpu, currentMemory, false, false)
