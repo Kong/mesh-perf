@@ -394,32 +394,28 @@ spec:
 			lastMemory := maxMemory
 			knownUpperBound := maxMemory
 			knownLowerBound := 0
-			nextAction := -1
+			nextAction := "decrease"
 
 			for {
 				var currentMemory int
 				var adjustment int
-				var action string
 				switch nextAction {
-				case 1:
-					action = "increase"
+				case "increase":
 					adjustment = (knownUpperBound - lastMemory) / 2
 					currentMemory = lastMemory + adjustment
-					if adjustment <= 20 {
-						Logf("There is no more space to %s, so %d is the target usage", action, lastMemory)
-						break
-					}
-					lastMemory = currentMemory
-				case -1:
-					action = "reduce"
+				case "decrease":
 					adjustment = (lastMemory - knownLowerBound) / 2
 					currentMemory = lastMemory - adjustment
-					lastMemory = currentMemory
-					if adjustment <= 20 {
-						Logf("There is no more space to %s, so %d is the target usage", action, lastMemory)
-						break
-					}
 				}
+				if adjustment <= 20 {
+					// for decreasing, we want to make sure minimal required memory is actually smaller than the "good" one
+					if nextAction == "decrease" {
+						lastMemory = currentMemory
+					}
+					Logf("There is no more space to %s, so %d is the target usage", nextAction, lastMemory)
+					break
+				}
+				lastMemory = currentMemory
 
 				By(fmt.Sprintf("Trying to use memory %dMi on the control plane", currentMemory))
 				adjustResource(cpu, currentMemory, false, false)
@@ -436,7 +432,7 @@ spec:
 				cancelMonitoring()
 
 				if err != nil {
-					nextAction = 1
+					nextAction = "increase"
 					if strings.Contains(err.Error(), "OOMKilled") {
 						knownLowerBound = currentMemory
 						Logf("Memory %dMi triggered OOMKilled", currentMemory)
@@ -446,7 +442,7 @@ spec:
 					}
 				} else {
 					knownUpperBound = currentMemory
-					nextAction = -1
+					nextAction = "decrease"
 					Logf("Memory %dMi worked well, will try another round with less memory", currentMemory)
 				}
 
