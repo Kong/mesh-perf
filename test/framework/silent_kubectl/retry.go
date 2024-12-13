@@ -1,4 +1,4 @@
-// nolint:all  // code here is extracted and revised from github.com/gruntwork-io/terratest
+// nolint:all  // code here is extracted and revised from github.com/gruntwork-io/terratest, this package should be removed once https://github.com/gruntwork-io/terratest/pull/1384 is merged
 package silent_kubectl
 
 import (
