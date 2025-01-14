@@ -9,8 +9,15 @@ on:
       - opened
       - labeled
 
+permissions: {}
+
 jobs:
   lifecycle:
     uses: kumahq/.github/.github/workflows/wfc_lifecycle.yml@main
+    permissions:
+      actions: read
+      contents: write
+      issues: write
+      pull-requests: write
     with:
       filesToIgnore: "CODE_OF_CONDUCT.md,LICENSE,SECURITY.md,CODEOWNERS,GOVERNANCE.md,CONTRIBUTING.md"
