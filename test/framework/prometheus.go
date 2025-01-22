@@ -33,7 +33,6 @@ func EnablePrometheusAdminAPIPatch() []json.RawMessage {
 	return []json.RawMessage{
 		[]byte(`{"op": "add", "path": "/spec/template/spec/containers/1/args/-", "value": "--storage.tsdb.no-lockfile"}`),
 		[]byte(`{"op": "add", "path": "/spec/template/spec/containers/1/args/-", "value": "--web.enable-admin-api"}`),
-		[]byte(`{"op": "remove", "path": "/spec/template/metadata/labels/kuma.io~1sidecar-injection"}`),
 		[]byte(`{"op": "replace", "path": "/spec/strategy/rollingUpdate"}`),
 		[]byte(`{"op": "replace", "path": "/spec/strategy/type", "value": "Recreate"}`),
 	}

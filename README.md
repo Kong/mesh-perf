@@ -14,9 +14,9 @@ make dev/tools
 ENV=local make start-cluster
 ```
 
-3. Run tests from mesh-perf directory. For example
+3. Run tests from mesh-perf directory
 ```sh
-PERF_TEST_MESH_VERSION=0.0.0-preview.vb1cda7f74 KMESH_LICENSE=<path>/license.json make run
+make run
 ```
 
 4. Destroy local cluster

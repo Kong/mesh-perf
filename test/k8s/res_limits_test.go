@@ -6,18 +6,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ghodss/yaml"
+	"github.com/gruntwork-io/terratest/modules/logger"
+	"github.com/gruntwork-io/terratest/modules/testing"
+	"k8s.io/apimachinery/pkg/watch"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/ghodss/yaml"
-	"github.com/gruntwork-io/terratest/modules/logger"
-	"github.com/gruntwork-io/terratest/modules/testing"
-	"k8s.io/apimachinery/pkg/watch"
-
 	"github.com/gruntwork-io/terratest/modules/k8s"
+	"github.com/kumahq/kuma-tools/graph"
 	"github.com/kumahq/kuma/pkg/config/core"
 	. "github.com/kumahq/kuma/test/framework"
 	. "github.com/onsi/ginkgo/v2"
@@ -25,9 +25,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kong/mesh-perf/pkg/graph/apis"
-	graph_k8s "github.com/kong/mesh-perf/pkg/graph/generators/k8s"
-	"github.com/kong/mesh-perf/pkg/graph/generators/k8s/fakeservice"
 	"github.com/kong/mesh-perf/test/framework"
 	"github.com/kong/mesh-perf/test/framework/silent_kubectl"
 )
@@ -190,21 +187,22 @@ spec:
 		deployDPs := func() {
 			Logf("deploying %d services and %d instances per service\n", numServices, instancesPerService)
 
-			svcGraph := apis.GenerateRandomMesh(872835240, numServices, 50, instancesPerService, instancesPerService)
+			svcGraph := graph.GenerateRandomServiceMesh(872835240, numServices, 50, instancesPerService, instancesPerService)
 
 			buffer := bytes.Buffer{}
 			fakeServiceRegistry := "nicholasjackson"
 			if alternativeContainerRegistry != "" {
 				fakeServiceRegistry = alternativeContainerRegistry
 			}
-			opts := append(fakeservice.GeneratorOpts(fakeServiceRegistry),
-				graph_k8s.WithNamespace(TestNamespace),
-				graph_k8s.SkipNamespaceCreation(),
-			)
+			Expect(svcGraph.ToYaml(&buffer, graph.ServiceConf{
+				WithReachableServices: true,
+				WithNamespace:         false,
+				WithMesh:              true,
+				Namespace:             TestNamespace,
+				Mesh:                  "default",
+				Image:                 fmt.Sprintf("%s/fake-service:v0.25.2", fakeServiceRegistry),
+			})).To(Succeed())
 
-			generator, err := graph_k8s.NewGenerator(opts...)
-			Expect(err).ToNot(HaveOccurred())
-			Expect(generator.Apply(&buffer, svcGraph)).To(Succeed())
 			Expect(cluster.Install(YamlK8s(buffer.String()))).To(Succeed())
 		}
 
