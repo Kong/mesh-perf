@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
-	"github.com/kumahq/kuma-tools/graph"
+	mesh "github.com/kumahq/kuma/api/mesh/v1alpha1"
 	"github.com/kumahq/kuma/pkg/config/core"
+	"github.com/kumahq/kuma/pkg/test/resources/builders"
 	. "github.com/kumahq/kuma/test/framework"
 	"github.com/kumahq/kuma/test/framework/envoy_admin"
 	"github.com/kumahq/kuma/test/framework/envoy_admin/tunnel"
@@ -17,6 +19,9 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	graph_apis "github.com/kong/mesh-perf/pkg/graph/apis"
+	graph_k8s "github.com/kong/mesh-perf/pkg/graph/generators/k8s"
+	"github.com/kong/mesh-perf/pkg/graph/generators/k8s/fakeservice"
 	"github.com/kong/mesh-perf/test/framework"
 )
 
@@ -25,20 +30,23 @@ func Simple() {
 	var instancesPerService int
 	var start time.Time
 
-	var svcGraph graph.Services
+	var svcGraph graph_apis.ServiceGraph
 
 	var alternativeContainerRegistry string
 
 	BeforeAll(func() {
 		opts := []KumaDeploymentOption{
+			WithSkipDefaultMesh(true),
 			WithCtlOpts(map[string]string{
-				"--set": "" +
-					"kuma.controlPlane.resources.requests.cpu=1," +
-					"kuma.controlPlane.resources.requests.memory=2Gi," +
+				"--set": strings.Join([]string{
+					"kuma.controlPlane.resources.requests.cpu=1",
+					"kuma.controlPlane.resources.requests.memory=2Gi",
 					"kuma.controlPlane.resources.limits.memory=32Gi",
-				"--env-var": "" +
-					"KUMA_RUNTIME_KUBERNETES_LEADER_ELECTION_LEASE_DURATION=100s," +
+				}, ","),
+				"--env-var": strings.Join([]string{
+					"KUMA_RUNTIME_KUBERNETES_LEADER_ELECTION_LEASE_DURATION=100s",
 					"KUMA_RUNTIME_KUBERNETES_LEADER_ELECTION_RENEW_DEADLINE=80s",
+				}, ","),
 			}),
 		}
 
@@ -62,6 +70,34 @@ func Simple() {
 			Setup(cluster)
 		Expect(err).ToNot(HaveOccurred())
 
+		Expect(cluster.Install(YamlK8s(builders.
+			Mesh().
+			WithMeshServicesEnabled(mesh.Mesh_MeshServices_Exclusive).
+			WithBuiltinMTLSBackend("ca-1").
+			WithEnabledMTLSBackend("ca-1").
+			WithoutInitialPolicies().
+			KubeYaml(),
+		))).To(Succeed())
+
+		Expect(cluster.Install(YamlK8s(`
+apiVersion: kuma.io/v1alpha1
+kind: MeshMetric
+metadata:
+  name: default
+  namespace: kong-mesh-system
+spec:
+  default:
+    backends:
+    - type: Prometheus
+      prometheus:
+        port: 5670
+        path: "/metrics"
+    sidecar:
+      profiles:
+        appendProfiles:
+        - name: Basic
+`))).To(Succeed())
+
 		num := requireVar("PERF_TEST_NUM_SERVICES")
 		i, err := strconv.Atoi(num)
 		Expect(err).ToNot(HaveOccurred(), "invalid value of PERF_TEST_NUM_SERVICES")
@@ -72,7 +108,7 @@ func Simple() {
 		Expect(err).ToNot(HaveOccurred(), "invalid value of PERF_TEST_INSTANCES_PER_SERVICE")
 		instancesPerService = i
 
-		svcGraph = graph.GenerateRandomServiceMesh(872835240, numServices, 50, instancesPerService, instancesPerService)
+		svcGraph = graph_apis.GenerateRandomMesh(872835240, numServices, 50, instancesPerService, instancesPerService)
 	})
 
 	BeforeEach(func() {
@@ -120,19 +156,14 @@ func Simple() {
 
 	It("should deploy graph", func() {
 		buffer := bytes.Buffer{}
-		fakeServiceRegistry := "nicholasjackson"
-		if alternativeContainerRegistry != "" {
-			fakeServiceRegistry = alternativeContainerRegistry
-		}
-		Expect(svcGraph.ToYaml(&buffer, graph.ServiceConf{
-			WithReachableServices: true,
-			WithNamespace:         false,
-			WithMesh:              true,
-			Namespace:             TestNamespace,
-			Mesh:                  "default",
-			Image:                 fmt.Sprintf("%s/fake-service:v0.25.2", fakeServiceRegistry),
-		})).To(Succeed())
+		opts := append(fakeservice.GeneratorOpts(alternativeContainerRegistry),
+			graph_k8s.WithNamespace(TestNamespace),
+			graph_k8s.SkipNamespaceCreation(),
+		)
 
+		generator, err := graph_k8s.NewGenerator(opts...)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(generator.Apply(&buffer, svcGraph)).To(Succeed())
 		Expect(cluster.Install(YamlK8s(buffer.String()))).To(Succeed())
 
 		Eventually(func() error {
@@ -147,8 +178,15 @@ func Simple() {
 		promClient, err := framework.NewPromClient(fmt.Sprintf("http://%s", endpoint))
 		Expect(err).ToNot(HaveOccurred())
 
-		acks, err := framework.XdsAckRequestsReceived(promClient)
-		Expect(err).ToNot(HaveOccurred())
+		var acks int
+		Eventually(func(g Gomega) {
+			newAcks, err := framework.XdsAckRequestsReceived(promClient)
+			g.Expect(err).ToNot(HaveOccurred())
+			if acks != newAcks {
+				acks = newAcks
+				g.Expect(true).To(BeFalse(), "acks are not stable")
+			}
+		}, "2m", "5s").MustPassRepeatedly(7).Should(Succeed())
 
 		policy := `
 apiVersion: kuma.io/v1alpha1
@@ -192,10 +230,11 @@ spec:
 
 		BeforeAll(func() {
 			// finding a service for scaling (observable) and a service to observe the scale (observer)
-			for _, svc := range svcGraph {
+			for _, svc := range svcGraph.Services {
 				if len(svc.Edges) != 0 {
-					observer = graph.ToName(svc.Idx)
-					observable = graph.ToName(svc.Edges[0])
+					observer = fakeservice.Formatters.Name(svc.Idx)
+					observable = fakeservice.Formatters.Name(svc.Edges[0])
+					break
 				}
 			}
 			pod := k8s.ListPods(
@@ -214,7 +253,7 @@ spec:
 			err := k8s.RunKubectlE(
 				cluster.GetTesting(),
 				cluster.GetKubectlOptions(TestNamespace),
-				"scale", "statefulset", observable, fmt.Sprintf("--replicas=%d", replicas),
+				"scale", "deployment", observable, fmt.Sprintf("--replicas=%d", replicas),
 			)
 			Expect(err).ToNot(HaveOccurred())
 
@@ -223,8 +262,9 @@ spec:
 
 			propagationStart := time.Now()
 			Eventually(func(g Gomega) {
-				membership, err := admin.GetStats(fmt.Sprintf("cluster.%s_kuma-test_svc_80.membership_total", observable))
+				membership, err := admin.GetStats(fmt.Sprintf("cluster.default_%s_kuma-test_default_msvc_9090.membership_total", observable))
 				g.Expect(err).ToNot(HaveOccurred())
+				g.Expect(membership.Stats).ToNot(BeEmpty())
 				g.Expect(membership.Stats[0].Value).To(BeNumerically("==", replicas))
 			}, "60s", "1s").Should(Succeed())
 			AddReportEntry("endpoint_propagation_duration", time.Since(propagationStart).Milliseconds())
@@ -241,14 +281,22 @@ spec:
 
 	It("should distribute certs when mTLS is enabled", func() {
 		expectedCerts := numServices * instancesPerService
-		Expect(cluster.Install(MTLSMeshKubernetes("default"))).To(Succeed())
+		Expect(cluster.Install(
+			YamlK8s(builders.
+				Mesh().
+				WithMeshServicesEnabled(mesh.Mesh_MeshServices_Exclusive).
+				WithBuiltinMTLSBackend("ca-2").
+				WithEnabledMTLSBackend("ca-2").
+				WithoutInitialPolicies().
+				KubeYaml(),
+			))).To(Succeed())
 
 		propagationStart := time.Now()
 		Eventually(func(g Gomega) {
 			out, err := k8s.RunKubectlAndGetOutputE(
 				cluster.GetTesting(),
 				cluster.GetKubectlOptions(),
-				"get", "meshinsights", "default", "-ojsonpath='{.spec.mTLS.issuedBackends.ca-1.total}'",
+				"get", "meshinsights", "default", "-ojsonpath='{.spec.mTLS.issuedBackends.ca-2.total}'",
 			)
 			g.Expect(err).ToNot(HaveOccurred())
 			g.Expect(out).To(Equal(fmt.Sprintf("'%d'", expectedCerts)))

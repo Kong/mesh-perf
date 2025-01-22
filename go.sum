@@ -246,8 +246,6 @@ github.com/kumahq/go-control-plane v0.13.1-kong-1 h1:y4VBsyImRrxfVA1/8Fk8QtDI18u
 github.com/kumahq/go-control-plane v0.13.1-kong-1/go.mod h1:X45hY0mufo6Fd0KW3rqsGvQMw58jvjymeCzBU3mWyHw=
 github.com/kumahq/kuma v0.0.0-20241008084707-7cae8f1a3a38 h1:FFkFFwIoiBzr914a0gKpcXn4vL5gw47xj78+fRFxdpQ=
 github.com/kumahq/kuma v0.0.0-20241008084707-7cae8f1a3a38/go.mod h1:kZsVLqP69OJnwEdegySxUHemi11pALkdcVR1pxVq8c8=
-github.com/kumahq/kuma-tools v0.0.3-0.20240916122904-1fb3d27bba76 h1:QWJ+WJmacg6j8hALb3uXFkyb2Z0cNXYFpF2pzQe2yog=
-github.com/kumahq/kuma-tools v0.0.3-0.20240916122904-1fb3d27bba76/go.mod h1:khap8wfiGKwcrnkGLTYQnAwQ/dPMA7BgBy3k+cHSW4E=
 github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0SNc=
 github.com/kylelemons/godebug v1.1.0/go.mod h1:9/0rRGxNHcop5bhtWyNeEfOS8JIWk580+fNqagV/RAw=
 github.com/lucasb-eyer/go-colorful v1.2.0 h1:1nnpGOrhyZZuNyfu1QjKiUICQ74+3FNCN69Aj6K7nkY=
