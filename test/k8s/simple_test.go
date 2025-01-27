@@ -9,15 +9,16 @@ import (
 	"time"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	mesh "github.com/kumahq/kuma/api/mesh/v1alpha1"
 	"github.com/kumahq/kuma/pkg/config/core"
 	"github.com/kumahq/kuma/pkg/test/resources/builders"
 	. "github.com/kumahq/kuma/test/framework"
 	"github.com/kumahq/kuma/test/framework/envoy_admin"
 	"github.com/kumahq/kuma/test/framework/envoy_admin/tunnel"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	graph_apis "github.com/kong/mesh-perf/pkg/graph/apis"
 	graph_k8s "github.com/kong/mesh-perf/pkg/graph/generators/k8s"
@@ -156,7 +157,11 @@ spec:
 
 	It("should deploy graph", func() {
 		buffer := bytes.Buffer{}
-		opts := append(fakeservice.GeneratorOpts(alternativeContainerRegistry),
+		opts := append(
+			fakeservice.GeneratorOpts(
+				fakeservice.WithRegistry(alternativeContainerRegistry),
+				fakeservice.WithReachableBackends(),
+			),
 			graph_k8s.WithNamespace(TestNamespace),
 			graph_k8s.SkipNamespaceCreation(),
 		)

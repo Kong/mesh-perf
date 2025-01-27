@@ -1,6 +1,7 @@
 package fakeservice
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -8,20 +9,66 @@ import (
 
 	"github.com/kong/mesh-perf/pkg/graph/apis"
 	"github.com/kong/mesh-perf/pkg/graph/generators/k8s"
+
+	"github.com/kumahq/kuma/api/common/v1alpha1"
+	"github.com/kumahq/kuma/pkg/plugins/runtime/k8s/controllers"
+	"github.com/kumahq/kuma/pkg/plugins/runtime/k8s/metadata"
+	"github.com/kumahq/kuma/pkg/util/pointer"
 )
 
 var Formatters = k8s.SimpleFormatters("fake-service")
 
-func GeneratorOpts(registry string) []k8s.Option {
-	if registry == "" {
-		registry = "nicholasjackson"
+type Options struct {
+	imageRegistry        string
+	useReachableBackends bool
+}
+
+type OptionFn func(Options) Options
+
+func WithRegistry(imageRegistry string) OptionFn {
+	return func(o Options) Options {
+		if imageRegistry == "" {
+			o.imageRegistry = imageRegistry
+		}
+		return o
 	}
+}
+
+func WithReachableBackends() OptionFn {
+	return func(o Options) Options {
+		o.useReachableBackends = true
+		return o
+	}
+}
+
+func GeneratorOpts(fns ...OptionFn) []k8s.Option {
+	opts := Options{
+		imageRegistry: "nicholasjackson",
+	}
+
+	for _, fn := range fns {
+		if fn != nil {
+			opts = fn(opts)
+		}
+	}
+
 	return []k8s.Option{
 		k8s.WithPort(9090),
 		k8s.WithFormatters(Formatters),
-		k8s.WithImage(fmt.Sprintf("%s/fake-service:v0.26.0", registry)),
-		k8s.WithPodTemplateSpecMutator(mutatePodTemplate),
+		k8s.WithImage(fmt.Sprintf("%s/fake-service:v0.26.0", opts.imageRegistry)),
+		k8s.WithPodTemplateSpecMutators(
+			mutatePodTemplate,
+			mutateMaybe(opts.useReachableBackends, configureReachableBackends),
+		),
 	}
+}
+
+func mutateMaybe(predicate bool, fn k8s.PodTemplateSpecMutator) k8s.PodTemplateSpecMutator {
+	if !predicate {
+		return nil
+	}
+
+	return fn
 }
 
 func mutatePodTemplate(formatters k8s.Formatters, svc apis.Service, template *v1.PodTemplateSpec) error {
@@ -39,5 +86,30 @@ func mutatePodTemplate(formatters k8s.Formatters, svc apis.Service, template *v1
 			Value: strings.Join(uris, ","),
 		},
 	)
+	return nil
+}
+
+func configureReachableBackends(formatters k8s.Formatters, svc apis.Service, template *v1.PodTemplateSpec) error {
+	var refs controllers.ReachableBackendRefs
+
+	for _, v := range svc.Edges {
+		refs.Refs = append(refs.Refs, &controllers.ReachableBackendRef{
+			Kind:      string(v1alpha1.MeshService),
+			Name:      pointer.To(formatters.Name(v)),
+			Namespace: &template.ObjectMeta.Namespace,
+		})
+	}
+
+	refsAnnotationValue, err := json.Marshal(refs)
+	if err != nil {
+		return err
+	}
+
+	if template.Annotations == nil {
+		template.Annotations = map[string]string{}
+	}
+
+	template.Annotations[metadata.KumaReachableBackends] = string(refsAnnotationValue)
+
 	return nil
 }

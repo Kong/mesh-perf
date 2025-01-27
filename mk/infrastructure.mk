@@ -62,6 +62,6 @@ ecr-push-kuma-dp:
 
 .PHONY: ecr-push-fake-service
 ecr-push-fake-service:
-	docker pull nicholasjackson/fake-service:v0.25.2 --platform linux/arm64 && \
-	docker tag nicholasjackson/fake-service:v0.25.2 $(ALTERNATIVE_CONTAINER_REGISTRY)/fake-service:v0.25.2 && \
-	docker push $(ALTERNATIVE_CONTAINER_REGISTRY)/fake-service:v0.25.2
+	docker pull nicholasjackson/fake-service:v0.26.0 --platform linux/arm64 && \
+	docker tag nicholasjackson/fake-service:v0.26.0 $(ALTERNATIVE_CONTAINER_REGISTRY)/fake-service:v0.26.0 && \
+	docker push $(ALTERNATIVE_CONTAINER_REGISTRY)/fake-service:v0.26.0

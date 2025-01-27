@@ -11,9 +11,24 @@ func main() {
 	services := requireIntVar("PERF_TEST_NUM_SERVICES")
 	instancesPerService := requireIntVar("PERF_TEST_INSTANCES_PER_SERVICE")
 
-	extras := 9        // additional pods required to run test that don't depend on number of nodes (Kuma CP, Prometheus, Grafana, etc.)
-	extrasPerNode := 3 // additional system pods that running on each node (some AWS EKS specific pods)
-	podsPerNode := 58  // we're using 't4g.2xlarge', it can run 58 pods, see full list here https://github.com/awslabs/amazon-eks-ami/blob/master/files/eni-max-pods.txt
+	// Additional pods required to run the test that do not depend on the number of nodes.
+	// These include control plane components like Kuma CP, Prometheus, Grafana, etc.
+	extras := 9
+
+	// Additional system pods running on each node, including AWS EKS-specific pods.
+	// These pods include aws-node (75m CPU), ebs-csi-node (30m CPU), and kube-proxy (100m CPU).
+	// Since we are currently limited by CPU and not by the number of pods per node,
+	// these system pods require a total of 205m CPU per node. While technically
+	// up to 5 more pods could fit on a node, this CPU constraint results in accounting
+	// for 2 additional pods per node in our calculation.
+	extrasPerNode := 2
+
+	// We're using the 't4g.2xlarge' instance type, which can run up to 58 pods per node.
+	// See the full list of instance types and their pod limits here:
+	// https://github.com/awslabs/amazon-eks-ami/blob/master/files/eni-max-pods.txt
+	// Each application pod along with its kuma-dp sidecar requests 150m CPU.
+	// This means a maximum of 53 application pods can run on a single node.
+	podsPerNode := 53
 
 	fmt.Print(math.Ceil(float64(services*instancesPerService+extras) / float64(podsPerNode-extrasPerNode)))
 }

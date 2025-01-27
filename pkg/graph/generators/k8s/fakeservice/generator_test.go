@@ -10,7 +10,7 @@ import (
 )
 
 func TestSimple(t *testing.T) {
-	opts := fakeservice.GeneratorOpts("")
+	opts := fakeservice.GeneratorOpts()
 	opts = append(opts, k8s.WithNamespace("foo"))
 	encoder, err := k8s.NewGenerator(opts...)
 	if err != nil {

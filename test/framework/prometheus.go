@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
-	"github.com/kumahq/kuma/test/framework"
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kumahq/kuma/test/framework"
 )
 
 func ApplyJSONPatch(cluster framework.Cluster, namespace, deployment string, operations []json.RawMessage) error {
