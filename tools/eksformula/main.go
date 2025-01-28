@@ -12,8 +12,8 @@ func main() {
 	instancesPerService := requireIntVar("PERF_TEST_INSTANCES_PER_SERVICE")
 
 	// Additional pods required to run the test that do not depend on the number of nodes.
-	// These include control plane components like Kuma CP, Prometheus, Grafana, etc.
-	extras := 9
+	// These include control plane components like Kuma CP
+	extras := 6
 
 	// Additional system pods running on each node, including AWS EKS-specific pods.
 	// These pods include aws-node (75m CPU), ebs-csi-node (30m CPU), and kube-proxy (100m CPU).

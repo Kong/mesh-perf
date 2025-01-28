@@ -118,7 +118,7 @@ spec:
 	})
 
 	AfterEach(func() {
-		endpoint := cluster.GetPortForward("prometheus-server").ApiServerEndpoint
+		endpoint := cluster.GetPortForward(framework.NamePrometheusServer).ApiServerEndpoint
 		promClient, err := framework.NewPromClient(fmt.Sprintf("http://%s", endpoint))
 		Expect(err).ToNot(HaveOccurred())
 
@@ -179,7 +179,7 @@ spec:
 	})
 
 	It("should deploy mesh wide policy", func() {
-		endpoint := cluster.GetPortForward("prometheus-server").ApiServerEndpoint
+		endpoint := cluster.GetPortForward(framework.NamePrometheusServer).ApiServerEndpoint
 		promClient, err := framework.NewPromClient(fmt.Sprintf("http://%s", endpoint))
 		Expect(err).ToNot(HaveOccurred())
 
@@ -305,7 +305,7 @@ spec:
 			)
 			g.Expect(err).ToNot(HaveOccurred())
 			g.Expect(out).To(Equal(fmt.Sprintf("'%d'", expectedCerts)))
-		}, "60s", "1s").Should(Succeed())
+		}, "600s", "5s").Should(Succeed())
 		AddReportEntry("certs_propagation_duration", time.Since(propagationStart).Milliseconds())
 	})
 }

@@ -49,13 +49,40 @@ module "eks" {
 
   eks_managed_node_groups = {
     default = {
-      name = "default-node-group"
+      name = "default"
 
       instance_types = [var.nodes_type]
 
       min_size     = 1
       max_size     = var.nodes_number
       desired_size = var.nodes_number
+    }
+
+    // This node group is dedicated to observability components like Prometheus to ensure
+    // they are isolated from other workloads. Prometheus resource requirements can grow
+    // rapidly when deploying a large number of services, and sharing a node with other pods
+    // might lead to resource shortages. By dedicating this node group, we ensure Prometheus
+    // has the resources it needs to function properly without being disrupted by other workloads.
+    observability = {
+      name = "observability"
+
+      instance_types = [var.nodes_type]
+
+      min_size     = 1
+      max_size     = 1
+      desired_size = 1
+
+      labels = {
+        NodeGroup = "observability"
+      }
+
+      taints = {
+        observability = {
+          key    = "ObservabilityOnly"
+          value  = "true"
+          effect = "NO_SCHEDULE"
+        }
+      }
     }
   }
 
