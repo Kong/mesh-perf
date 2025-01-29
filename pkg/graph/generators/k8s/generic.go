@@ -70,7 +70,13 @@ func WithConfigMapGenerator(fn func(f Formatters, svc apis.Service) (string, err
 
 func WithPodTemplateSpecMutators(fns ...PodTemplateSpecMutator) Option {
 	return OptionFn(func(g *generator) error {
-		g.podTemplateSpecMutators = slices.Concat(g.podTemplateSpecMutators, fns)
+		g.podTemplateSpecMutators = slices.Concat(
+			g.podTemplateSpecMutators,
+			slices.DeleteFunc(
+				fns,
+				func(fn PodTemplateSpecMutator) bool { return fn == nil },
+			),
+		)
 		return nil
 	})
 }

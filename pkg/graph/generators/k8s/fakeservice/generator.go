@@ -21,6 +21,7 @@ var Formatters = k8s.SimpleFormatters("fake-service")
 type Options struct {
 	imageRegistry        string
 	useReachableBackends bool
+	useReachableServices bool
 }
 
 type OptionFn func(Options) Options
@@ -37,6 +38,13 @@ func WithRegistry(imageRegistry string) OptionFn {
 func WithReachableBackends() OptionFn {
 	return func(o Options) Options {
 		o.useReachableBackends = true
+		return o
+	}
+}
+
+func WithReachableServices() OptionFn {
+	return func(o Options) Options {
+		o.useReachableServices = true
 		return o
 	}
 }
@@ -58,6 +66,7 @@ func GeneratorOpts(fns ...OptionFn) []k8s.Option {
 		k8s.WithImage(fmt.Sprintf("%s/fake-service:v0.26.0", opts.imageRegistry)),
 		k8s.WithPodTemplateSpecMutators(
 			mutatePodTemplate,
+			mutateMaybe(opts.useReachableServices && !opts.useReachableBackends, configureReachableServices),
 			mutateMaybe(opts.useReachableBackends, configureReachableBackends),
 		),
 	}
@@ -110,6 +119,27 @@ func configureReachableBackends(formatters k8s.Formatters, svc apis.Service, tem
 	}
 
 	template.Annotations[metadata.KumaReachableBackends] = string(refsAnnotationValue)
+
+	return nil
+}
+
+func configureReachableServices(formatters k8s.Formatters, svc apis.Service, template *v1.PodTemplateSpec) error {
+	var names []string
+
+	for _, v := range svc.Edges {
+		names = append(names, fmt.Sprintf(
+			"%s_%s_svc_%d",
+			formatters.Name(v),
+			template.GetNamespace(),
+			9090,
+		))
+	}
+
+	if template.Annotations == nil {
+		template.Annotations = map[string]string{}
+	}
+
+	template.Annotations[metadata.KumaTransparentProxyingReachableServicesAnnotation] = strings.Join(names, ",")
 
 	return nil
 }
