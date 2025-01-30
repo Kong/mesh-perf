@@ -127,3 +127,25 @@ resource "aws_eks_addon" "ebs-csi" {
   }
   depends_on = [module.eks.eks_managed_node_groups]
 }
+
+resource "helm_release" "metrics_server" {
+  name       = "metrics-server"
+  namespace  = "kube-system"
+  repository = "https://kubernetes-sigs.github.io/metrics-server/"
+  chart      = "metrics-server"
+  version    = "3.12.2"
+  wait       = false
+
+  values = [
+    <<-YAML
+    metrics:
+      enabled: true
+    nodeSelector:
+      NodeGroup: observability
+    tolerations:
+    - key: ObservabilityOnly
+      operator: Exists
+      effect: NoSchedule
+    YAML
+  ]
+}
