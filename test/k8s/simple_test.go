@@ -146,7 +146,11 @@ spec:
 	})
 
 	E2EAfterAll(func() {
-		Expect(cluster.TriggerDeleteNamespace(TestNamespace)).To(Succeed())
+		Expect(cluster.TriggerDeleteNamespaceCustomHooks(
+			TestNamespace,
+			DeleteAllResources("services", "--grace-period=1"),
+			DeleteAllResources("pod", "--grace-period=0", "--force"),
+		)).To(Succeed())
 		Expect(cluster.DeleteKuma()).To(Succeed())
 	})
 
