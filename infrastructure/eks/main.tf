@@ -1,7 +1,3 @@
-provider "aws" {
-  region = var.region
-}
-
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.9.0"
@@ -28,6 +24,8 @@ module "vpc" {
     "kubernetes.io/role/internal-elb"           = 1
   }
 }
+
+data "aws_caller_identity" "current" {}
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
@@ -99,6 +97,22 @@ module "eks" {
   authentication_mode                      = "API_AND_CONFIG_MAP"
   # required to add current use as a cluster admin
   enable_cluster_creator_admin_permissions = true
+
+  access_entries = {
+    poweruser = {
+      principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/poweruser"
+
+      policy_associations = {
+        cluster_admin = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = {
+            type       = "cluster"
+            namespaces = []
+          }
+        }
+      }
+    }
+  }
 }
 
 data "aws_iam_policy" "ebs_csi_policy" {
