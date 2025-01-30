@@ -56,11 +56,6 @@ module "eks" {
       desired_size = var.nodes_number
     }
 
-    // This node group is dedicated to observability components like Prometheus to ensure
-    // they are isolated from other workloads. Prometheus resource requirements can grow
-    // rapidly when deploying a large number of services, and sharing a node with other pods
-    // might lead to resource shortages. By dedicating this node group, we ensure Prometheus
-    // has the resources it needs to function properly without being disrupted by other workloads.
     observability = {
       name = "observability"
 
@@ -94,11 +89,13 @@ module "eks" {
       description                   = "Allow access from control plane to webhook port of AWS load balancer controller"
     }
   }
+
   authentication_mode                      = "API_AND_CONFIG_MAP"
-  # required to add current use as a cluster admin
   enable_cluster_creator_admin_permissions = true
 
-  access_entries = {
+  # Necessary only when running on CI, as clusters created locally already have the required access entry.
+  # This ensures access to clusters created in CI for local debugging when needed.
+  access_entries = local.ci ? {
     poweruser = {
       principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/poweruser"
 
@@ -112,7 +109,7 @@ module "eks" {
         }
       }
     }
-  }
+  } : {}
 }
 
 data "aws_iam_policy" "ebs_csi_policy" {
