@@ -55,7 +55,7 @@ ecr-push: ecr-authenticate ecr-push-kuma-dp ecr-push-fake-service
 
 .PHONY: ecr-authenticate
 ecr-authenticate:
-	aws ecr get-login-password --region $(AWS_REGION) | docker login $(REGISTRY) --username AWS --password-stdin
+	aws ecr get-login-password --region $(AWS_REGION) | docker login $(ALTERNATIVE_CONTAINER_REGISTRY) --username AWS --password-stdin
 
 .PHONY: ecr-push-kuma-dp
 ecr-push-kuma-dp:
