@@ -2,10 +2,11 @@ package framework
 
 import (
 	"github.com/gruntwork-io/terratest/modules/helm"
-	"github.com/kumahq/kuma/test/framework"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	prometheus_push "github.com/prometheus/client_golang/prometheus/push"
+
+	"github.com/kumahq/kuma/test/framework"
 )
 
 const prometheusPushgatewayApp = "prometheus-pushgateway"
@@ -46,9 +47,13 @@ func InstallPrometheusPushgateway(cluster *framework.K8sCluster, ns string) erro
 	err = helm.InstallE(cluster.GetTesting(), &helm.Options{
 		KubectlOptions: cluster.GetKubectlOptions(ns),
 		SetStrValues: map[string]string{
-			`serviceAnnotations.prometheus\.io/scrape`: `true`,
-			`serviceAnnotations.prometheus\.io/port`:   `9091`,
-			`podLabels.app`:                            prometheusPushgatewayApp,
+			`serviceAnnotations.prometheus\.io/scrape`: "true",
+			`serviceAnnotations.prometheus\.io/port`:   "9091",
+			"podLabels.app":                            prometheusPushgatewayApp,
+			"nodeSelector.NodeGroup":                   nameNodeGroupObservability,
+			"tolerations[0].key":                       toleration.Key,
+			"tolerations[0].operator":                  string(toleration.Operator),
+			"tolerations[0].effect":                    string(toleration.Effect),
 		},
 	}, "prometheus-community/prometheus-pushgateway", prometheusPushgatewayApp)
 	if err != nil {

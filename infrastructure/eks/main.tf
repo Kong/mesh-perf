@@ -1,7 +1,3 @@
-provider "aws" {
-  region = var.region
-}
-
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.9.0"
@@ -29,6 +25,8 @@ module "vpc" {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "20.17.2"
@@ -49,13 +47,35 @@ module "eks" {
 
   eks_managed_node_groups = {
     default = {
-      name = "default-node-group"
+      name = "default"
 
       instance_types = [var.nodes_type]
 
       min_size     = 1
       max_size     = var.nodes_number
       desired_size = var.nodes_number
+    }
+
+    observability = {
+      name = "observability"
+
+      instance_types = [var.nodes_type]
+
+      min_size     = 1
+      max_size     = 1
+      desired_size = 1
+
+      labels = {
+        NodeGroup = "observability"
+      }
+
+      taints = {
+        observability = {
+          key    = "ObservabilityOnly"
+          value  = "true"
+          effect = "NO_SCHEDULE"
+        }
+      }
     }
   }
 
@@ -69,9 +89,27 @@ module "eks" {
       description                   = "Allow access from control plane to webhook port of AWS load balancer controller"
     }
   }
+
   authentication_mode                      = "API_AND_CONFIG_MAP"
-  # required to add current use as a cluster admin
   enable_cluster_creator_admin_permissions = true
+
+  # Necessary only when running on CI, as clusters created locally already have the required access entry.
+  # This ensures access to clusters created in CI for local debugging when needed.
+  access_entries = local.ci ? {
+    poweruser = {
+      principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/poweruser"
+
+      policy_associations = {
+        cluster_admin = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = {
+            type       = "cluster"
+            namespaces = []
+          }
+        }
+      }
+    }
+  } : {}
 }
 
 data "aws_iam_policy" "ebs_csi_policy" {
@@ -99,4 +137,26 @@ resource "aws_eks_addon" "ebs-csi" {
     "terraform" = "true"
   }
   depends_on = [module.eks.eks_managed_node_groups]
+}
+
+resource "helm_release" "metrics_server" {
+  name       = "metrics-server"
+  namespace  = "kube-system"
+  repository = "https://kubernetes-sigs.github.io/metrics-server/"
+  chart      = "metrics-server"
+  version    = "3.12.2"
+  wait       = false
+
+  values = [
+    <<-YAML
+    metrics:
+      enabled: true
+    nodeSelector:
+      NodeGroup: observability
+    tolerations:
+    - key: ObservabilityOnly
+      operator: Exists
+      effect: NoSchedule
+    YAML
+  ]
 }

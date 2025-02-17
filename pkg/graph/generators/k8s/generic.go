@@ -3,6 +3,7 @@ package k8s
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -14,16 +15,22 @@ import (
 	"github.com/kong/mesh-perf/pkg/graph/apis"
 )
 
+type PodTemplateSpecMutator func(
+	formatters Formatters,
+	svc apis.Service,
+	template *v1.PodTemplateSpec,
+) error
+
 // Generator is a Kubernetes resource generator
 type generator struct {
-	asStatefulSet          bool
-	namespace              string
-	image                  string
-	port                   int32
-	formatters             Formatters
-	configMapGenerator     func(formatters Formatters, svc apis.Service) (string, error)
-	podTemplateSpecMutator func(formatters Formatters, svc apis.Service, template *v1.PodTemplateSpec) error
-	skipNamespaceCreation  bool
+	asStatefulSet           bool
+	namespace               string
+	image                   string
+	port                    int32
+	formatters              Formatters
+	configMapGenerator      func(formatters Formatters, svc apis.Service) (string, error)
+	podTemplateSpecMutators []PodTemplateSpecMutator
+	skipNamespaceCreation   bool
 }
 
 type Formatters struct {
@@ -61,9 +68,15 @@ func WithConfigMapGenerator(fn func(f Formatters, svc apis.Service) (string, err
 	})
 }
 
-func WithPodTemplateSpecMutator(fn func(f Formatters, svc apis.Service, template *v1.PodTemplateSpec) error) Option {
+func WithPodTemplateSpecMutators(fns ...PodTemplateSpecMutator) Option {
 	return OptionFn(func(g *generator) error {
-		g.podTemplateSpecMutator = fn
+		g.podTemplateSpecMutators = slices.Concat(
+			g.podTemplateSpecMutators,
+			slices.DeleteFunc(
+				fns,
+				func(fn PodTemplateSpecMutator) bool { return fn == nil },
+			),
+		)
 		return nil
 	})
 }
@@ -221,10 +234,11 @@ func (g generator) Apply(svc apis.Service) ([]runtime.Object, []byte, error) {
 		})
 	}
 	baseObjectMeta.DeepCopyInto(&podTemplateSpec.ObjectMeta)
-	if g.podTemplateSpecMutator != nil {
-		err := g.podTemplateSpecMutator(g.formatters, svc, &podTemplateSpec)
-		if err != nil {
-			return nil, nil, err
+	if g.podTemplateSpecMutators != nil {
+		for _, mutator := range g.podTemplateSpecMutators {
+			if err := mutator(g.formatters, svc, &podTemplateSpec); err != nil {
+				return nil, nil, err
+			}
 		}
 	}
 

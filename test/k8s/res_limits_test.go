@@ -18,12 +18,13 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
-	"github.com/kumahq/kuma/pkg/config/core"
-	. "github.com/kumahq/kuma/test/framework"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kumahq/kuma/pkg/config/core"
+	. "github.com/kumahq/kuma/test/framework"
 
 	"github.com/kong/mesh-perf/pkg/graph/apis"
 	graph_k8s "github.com/kong/mesh-perf/pkg/graph/generators/k8s"
@@ -197,7 +198,11 @@ spec:
 			if alternativeContainerRegistry != "" {
 				fakeServiceRegistry = alternativeContainerRegistry
 			}
-			opts := append(fakeservice.GeneratorOpts(fakeServiceRegistry),
+			opts := append(
+				fakeservice.GeneratorOpts(
+					fakeservice.WithRegistry(fakeServiceRegistry),
+					fakeservice.WithReachableBackends(),
+				),
 				graph_k8s.WithNamespace(TestNamespace),
 				graph_k8s.SkipNamespaceCreation(),
 			)

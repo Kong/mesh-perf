@@ -22,3 +22,8 @@ variable "availability_zones" {
   type = list(string)
   default = ["us-west-1b", "us-west-1c"]
 }
+
+variable "ci" {
+  description = "Set to true if run in CI"
+  type        = string
+}
