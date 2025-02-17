@@ -28,7 +28,7 @@ type OptionFn func(Options) Options
 
 func WithRegistry(imageRegistry string) OptionFn {
 	return func(o Options) Options {
-		if imageRegistry == "" {
+		if imageRegistry != "" {
 			o.imageRegistry = imageRegistry
 		}
 		return o
