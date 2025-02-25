@@ -11,7 +11,8 @@ E2E_ENV_VARS += PERF_LIMIT_MILLI_CPU=$${PERF_LIMIT_MILLI_CPU:=1000}
 E2E_ENV_VARS += PERF_TEST_NUM_SERVICES=$${PERF_TEST_NUM_SERVICES:=70}
 E2E_ENV_VARS += PERF_TEST_INSTANCES_PER_SERVICE=$${PERF_TEST_INSTANCES_PER_SERVICE:=2}
 E2E_ENV_VARS += PERF_TEST_STABILIZATION_SLEEP=$${PERF_TEST_STABILIZATION_SLEEP:=30s}
-E2E_ENV_VARS += ALTERNATIVE_CONTAINER_REGISTRY=$(ALTERNATIVE_CONTAINER_REGISTRY)
+E2E_ENV_VARS += CONTAINER_REGISTRY=$(CONTAINER_REGISTRY)
+E2E_ENV_VARS += DEBUG_OBSERVABILITY=$(DEBUG)
 
 .PHONY: fetch-mesh
 fetch-mesh:
@@ -19,9 +20,12 @@ fetch-mesh:
 	mkdir -p build
 	[ -f $(KUMACTLBIN) ] || (cd build && curl -L https://docs.konghq.com/mesh/installer.sh | VERSION=$(PERF_TEST_MESH_VERSION) sh -)
 
+test-runs:
+	mkdir -p test-runs
+
 .PHONY: run
-run: fetch-mesh
-	$(E2E_ENV_VARS) $(GINKGO) -v --timeout=4h --label-filter="!limits" --json-report=raw-report.json ./test/...
+run: fetch-mesh | test-runs
+	$(E2E_ENV_VARS) $(GINKGO) --timeout=4h --label-filter="!limits" --json-report=raw-report.json -v ./test/... 2>&1;
 
 .PHONY: run/limits
 run/limits: fetch-mesh
