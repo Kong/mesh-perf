@@ -64,8 +64,17 @@ func (e Generator) encode(writer io.Writer, inputs ...runtime.Object) error {
 		if err := yaml.Unmarshal(b.Bytes(), &obj); err != nil {
 			return err
 		}
+
 		delete(obj, "status")
 		delete(obj["metadata"].(map[string]interface{}), "creationTimestamp")
+
+		if spec, ok := obj["spec"].(map[string]interface{}); ok {
+			if template, ok := spec["template"].(map[string]interface{}); ok {
+				if metadata, ok := template["metadata"].(map[string]interface{}); ok {
+					delete(metadata, "creationTimestamp")
+				}
+			}
+		}
 		b2, err := yaml.Marshal(obj)
 		if err != nil {
 			return err

@@ -6,17 +6,42 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
-	"github.com/kumahq/kuma/test/framework"
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/kumahq/kuma/test/framework"
 )
 
-func ApplyJSONPatch(cluster framework.Cluster, namespace, deployment string, operations []json.RawMessage) error {
+type PatchKind string
+
+const (
+	NamePrometheusServer           = "prometheus-server"
+	NameGrafana                    = "grafana"
+	KindDeployment       PatchKind = "deployment"
+	KindService          PatchKind = "service"
+)
+
+type Patcher func(kind PatchKind, name string, operations ...[]json.RawMessage) error
+
+func NewPatcher(cluster framework.Cluster, namespace string, baseOperations ...[]json.RawMessage) Patcher {
+	return func(kind PatchKind, name string, operations ...[]json.RawMessage) error {
+		return ApplyJSONPatch(
+			cluster,
+			namespace,
+			kind,
+			name,
+			slices.Concat(slices.Concat(baseOperations, operations)...),
+		)
+	}
+}
+
+func ApplyJSONPatch(cluster framework.Cluster, namespace string, kind PatchKind, name string, operations []json.RawMessage) error {
 	patch, err := json.Marshal(operations)
 	if err != nil {
 		return err
@@ -25,8 +50,20 @@ func ApplyJSONPatch(cluster framework.Cluster, namespace, deployment string, ope
 	return k8s.RunKubectlE(
 		cluster.GetTesting(),
 		cluster.GetKubectlOptions(namespace),
-		"patch", "deployment", deployment, "--type", "json", "--patch", string(patch),
+		"patch", string(kind), name, "--type", "json", "--patch", string(patch),
 	)
+}
+
+func GrafanaServicePatch() []json.RawMessage {
+	return []json.RawMessage{
+		[]byte(`{"op": "replace", "path": "/spec/type", "value": "LoadBalancer"}`),
+	}
+}
+
+func GrafanaDeploymentPatch() []json.RawMessage {
+	return []json.RawMessage{
+		[]byte(`{"op": "remove", "path": "/spec/template/metadata/labels/kuma.io~1sidecar-injection"}`),
+	}
 }
 
 func EnablePrometheusAdminAPIPatch() []json.RawMessage {
@@ -67,7 +104,7 @@ func SavePrometheusSnapshot(cluster framework.Cluster, namespace string, hostPat
 	out, err := k8s.RunKubectlAndGetOutputE(
 		cluster.GetTesting(),
 		cluster.GetKubectlOptions(namespace),
-		"exec", podName, "-c", "prometheus-server", "--", "sh", "-c",
+		"exec", podName, "-c", NamePrometheusServer, "--", "sh", "-c",
 		`wget -qO- --post-data='{}' http://localhost:9090/api/v1/admin/tsdb/snapshot`,
 	)
 	if err != nil {
@@ -87,7 +124,7 @@ func SavePrometheusSnapshot(cluster framework.Cluster, namespace string, hostPat
 	err = k8s.RunKubectlE(
 		cluster.GetTesting(),
 		cluster.GetKubectlOptions(),
-		"cp", src, dest, "-c", "prometheus-server", "--retries", "10",
+		"cp", src, dest, "-c", NamePrometheusServer, "--retries", "10",
 	)
 	if err != nil {
 		return err
@@ -107,7 +144,7 @@ type promSnapshotResponse struct {
 }
 
 func PortForwardPrometheusServer(cluster *framework.K8sCluster, ns string) error {
-	return cluster.PortForwardService("prometheus-server", ns, 9090)
+	return cluster.PortForwardService(NamePrometheusServer, ns, 9090)
 }
 
 type PromClient struct {
@@ -136,11 +173,11 @@ func (p *PromClient) QueryIntValue(query string) (int, error) {
 
 	vector, ok := result.(model.Vector)
 	if !ok {
-		return 0, errors.New("Unexpected query result type")
+		return 0, errors.New("unexpected query result type")
 	}
 
 	if len(vector) == 0 {
-		return 0, fmt.Errorf("No results found for the query: %s", query)
+		return 0, fmt.Errorf("no results found for the query: %s", query)
 	}
 
 	return int(vector[0].Value), nil

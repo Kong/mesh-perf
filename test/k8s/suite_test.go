@@ -5,30 +5,38 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"slices"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/kennygrant/sanitize"
-	"github.com/kumahq/kuma/pkg/test"
-	. "github.com/kumahq/kuma/test/framework"
-	obs "github.com/kumahq/kuma/test/framework/deployments/observability"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	k8s_strings "k8s.io/utils/strings"
 
 	"github.com/kong/mesh-perf/test/framework"
+
+	"github.com/kumahq/kuma/pkg/test"
+	. "github.com/kumahq/kuma/test/framework"
+	obs "github.com/kumahq/kuma/test/framework/deployments/observability"
 )
 
 func TestE2E(t *testing.T) {
 	test.RunE2ESpecs(t, "E2E Kubernetes Suite")
 }
 
-var cluster *K8sCluster
-var stabilizationSleep time.Duration
+const obsNamespace = "monitoring"
 
-const obsNamespace = "mesh-observability"
-
-var kmeshLicense string
+var (
+	cluster            *K8sCluster
+	stabilizationSleep time.Duration
+	suiteNumServices   int
+	suiteNumInstances  int
+	kmeshLicense       string
+	containerRegistry  string
+	debug              bool
+)
 
 func requireVar(key string) string {
 	val, ok := os.LookupEnv(key)
@@ -45,6 +53,12 @@ var _ = BeforeSuite(func() {
 		kubeConfigPath = "${HOME}/.kube/config"
 	}
 
+	if v, ok := os.LookupEnv("DEBUG"); ok {
+		debug = slices.Contains([]string{"1", "true"}, v)
+	}
+
+	containerRegistry = os.Getenv("CONTAINER_REGISTRY")
+
 	kmeshLicense = requireVar("KMESH_LICENSE")
 	sleep := requireVar("PERF_TEST_STABILIZATION_SLEEP")
 	sleepDur, err := time.ParseDuration(sleep)
@@ -53,25 +67,51 @@ var _ = BeforeSuite(func() {
 	}
 	stabilizationSleep = sleepDur
 
+	suiteNumServices, err = strconv.Atoi(requireVar("PERF_TEST_NUM_SERVICES"))
+	Expect(err).ToNot(HaveOccurred(), "invalid value of PERF_TEST_NUM_SERVICES")
+
+	suiteNumInstances, err = strconv.Atoi(requireVar("PERF_TEST_INSTANCES_PER_SERVICE"))
+	Expect(err).ToNot(HaveOccurred(), "invalid value of PERF_TEST_INSTANCES_PER_SERVICE")
+
 	cluster = NewK8sCluster(NewTestingT(), "mesh-perf", true)
 
 	cluster.WithKubeConfig(os.ExpandEnv(kubeConfigPath))
+
+	obsComponents := []obs.Component{obs.PrometheusComponent}
+	if debug {
+		obsComponents = append(obsComponents, obs.GrafanaComponent)
+	}
+
 	Expect(cluster.Install(obs.Install(
 		"obs",
 		obs.WithNamespace(obsNamespace),
-		obs.WithComponents(obs.PrometheusComponent, obs.GrafanaComponent),
+		obs.WithComponents(obsComponents...),
 	))).To(Succeed())
 
-	Expect(framework.ApplyJSONPatch(cluster, obsNamespace, "prometheus-server",
-		append(framework.EnablePrometheusAdminAPIPatch(), framework.SetPrometheusResourcesPatch()...))).To(Succeed())
+	patchObs := framework.NewPatcher(cluster, obsNamespace)
+
+	Expect(patchObs(
+		framework.KindDeployment,
+		framework.NamePrometheusServer,
+		slices.Concat(
+			framework.EnablePrometheusAdminAPIPatch(),
+			framework.SetPrometheusResourcesPatch(),
+		),
+	)).To(Succeed())
+
+	if debug {
+		Expect(patchObs(framework.KindDeployment, framework.NameGrafana, framework.GrafanaDeploymentPatch())).To(Succeed())
+		Expect(patchObs(framework.KindService, framework.NameGrafana, framework.GrafanaServicePatch())).To(Succeed())
+	}
 
 	Expect(framework.InstallPrometheusPushgateway(cluster, obsNamespace))
+
 	Eventually(func() error {
 		return framework.PortForwardPrometheusPushgateway(cluster, obsNamespace)
-	}, "30s", "1s").Should(Succeed())
+	}, "300s", "1s").Should(Succeed())
 	Eventually(func() error {
 		return framework.PortForwardPrometheusServer(cluster, obsNamespace)
-	}, "30s", "1s").Should(Succeed())
+	}, "300s", "1s").Should(Succeed())
 })
 
 var _ = AfterSuite(func() {

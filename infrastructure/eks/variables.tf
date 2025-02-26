@@ -4,21 +4,41 @@ variable "region" {
   default     = "us-west-1"
 }
 
+variable "availability_zones" {
+  description = "List of availability zones to use"
+  type        = list(string)
+  default     = ["us-west-1b", "us-west-1c"]
+}
+
 variable "cluster_name" {
-  type = string
-  default = "mesh-perf"
+  description = "Name of the EKS cluster"
+  type        = string
+  default     = "mesh-perf"
+}
+
+variable "cluster_version" {
+  description = "Kubernetes version of the EKS cluster"
+  type        = number
+  default     = 1.32
 }
 
 variable "nodes_number" {
-  type = number
+  description = "Number of worker nodes in the cluster"
+  type        = number
 }
 
 variable "nodes_type" {
-  type = string
-  default = "t4g.2xlarge"
+  description = "EC2 instance type for the worker nodes"
+  type        = string
+  default     = "t4g.2xlarge"
 }
 
-variable "availability_zones" {
-  type = list(string)
-  default = ["us-west-1b", "us-west-1c"]
+variable "ci" {
+  description = "Set to true if run in CI"
+  type        = string
+}
+
+variable "debug" {
+  description = "Set to true if run in CI with RUNNER_DEBUG enabled"
+  type        = string
 }

@@ -11,7 +11,7 @@ make dev/tools
 
 2. Create local cluster
 ```sh
-ENV=local make start-cluster
+make infra/create
 ```
 
 3. Run tests from mesh-perf directory. For example
@@ -21,16 +21,15 @@ PERF_TEST_MESH_VERSION=0.0.0-preview.vb1cda7f74 KMESH_LICENSE=<path>/license.jso
 
 4. Destroy local cluster
 ```sh
-ENV=local make destroy-cluster
+make infra/destroy
 ```
-
 
 ## Setup EKS cluster from your machine
 
-It is recommended to use saml2aws for AWS authorization. After authorizing you just need to run command
+It is recommended to use `saml2aws` for AWS authorization. After authorizing you just need to run command
 
 ```sh
-AWS_PROFILE=saml ENV=eks make start-cluster
+AWS_PROFILE=saml ENV=eks make infra/create
 ```
 
 ## Observability

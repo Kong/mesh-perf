@@ -54,3 +54,19 @@ resource "k3d_cluster" "mesh-perf" {
     }
   }
 }
+
+resource "null_resource" "cleanup_kubeconfig" {
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<EOT
+      kubectx -d "k3d-mesh-perf" || true
+      kubectl config delete-context "k3d-mesh-perf" || true
+      kubectl config delete-cluster "k3d-mesh-perf" || true
+      kubectl config delete-user "k3d-mesh-perf" || true
+    EOT
+  }
+
+  depends_on = [
+    k3d_cluster.mesh-perf,
+  ]
+}

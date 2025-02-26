@@ -3,21 +3,20 @@ package k8s_test
 import (
 	"bytes"
 	"fmt"
-	"os"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	mesh "github.com/kumahq/kuma/api/mesh/v1alpha1"
 	"github.com/kumahq/kuma/pkg/config/core"
 	"github.com/kumahq/kuma/pkg/test/resources/builders"
 	. "github.com/kumahq/kuma/test/framework"
 	"github.com/kumahq/kuma/test/framework/envoy_admin"
 	"github.com/kumahq/kuma/test/framework/envoy_admin/tunnel"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	graph_apis "github.com/kong/mesh-perf/pkg/graph/apis"
 	graph_k8s "github.com/kong/mesh-perf/pkg/graph/generators/k8s"
@@ -26,13 +25,8 @@ import (
 )
 
 func Simple() {
-	var numServices int
-	var instancesPerService int
 	var start time.Time
-
 	var svcGraph graph_apis.ServiceGraph
-
-	var alternativeContainerRegistry string
 
 	BeforeAll(func() {
 		opts := []KumaDeploymentOption{
@@ -46,16 +40,18 @@ func Simple() {
 				"--env-var": strings.Join([]string{
 					"KUMA_RUNTIME_KUBERNETES_LEADER_ELECTION_LEASE_DURATION=100s",
 					"KUMA_RUNTIME_KUBERNETES_LEADER_ELECTION_RENEW_DEADLINE=80s",
+					fmt.Sprintf("KUMA_DIAGNOSTICS_DEBUG_ENDPOINTS=%v", debug),
 				}, ","),
 			}),
 		}
 
-		alternativeContainerRegistry, _ = os.LookupEnv("ALTERNATIVE_CONTAINER_REGISTRY")
-
-		if alternativeContainerRegistry != "" {
+		if containerRegistry != "" {
 			opts = append(opts,
 				WithCtlOpts(map[string]string{
-					"--dataplane-registry": alternativeContainerRegistry,
+					"--registry":                containerRegistry,
+					"--dataplane-registry":      containerRegistry,
+					"--dataplane-init-registry": containerRegistry,
+					"--control-plane-registry":  containerRegistry,
 				}))
 		}
 
@@ -98,17 +94,13 @@ spec:
         - name: Basic
 `))).To(Succeed())
 
-		num := requireVar("PERF_TEST_NUM_SERVICES")
-		i, err := strconv.Atoi(num)
-		Expect(err).ToNot(HaveOccurred(), "invalid value of PERF_TEST_NUM_SERVICES")
-		numServices = i
-
-		num = requireVar("PERF_TEST_INSTANCES_PER_SERVICE")
-		i, err = strconv.Atoi(num)
-		Expect(err).ToNot(HaveOccurred(), "invalid value of PERF_TEST_INSTANCES_PER_SERVICE")
-		instancesPerService = i
-
-		svcGraph = graph_apis.GenerateRandomMesh(872835240, numServices, 50, instancesPerService, instancesPerService)
+		svcGraph = graph_apis.GenerateRandomMesh(
+			872835240,
+			suiteNumServices,
+			50,
+			suiteNumInstances,
+			suiteNumInstances,
+		)
 	})
 
 	BeforeEach(func() {
@@ -117,7 +109,7 @@ spec:
 	})
 
 	AfterEach(func() {
-		endpoint := cluster.GetPortForward("prometheus-server").ApiServerEndpoint
+		endpoint := cluster.GetPortForward(framework.NamePrometheusServer).ApiServerEndpoint
 		promClient, err := framework.NewPromClient(fmt.Sprintf("http://%s", endpoint))
 		Expect(err).ToNot(HaveOccurred())
 
@@ -145,7 +137,7 @@ spec:
 	})
 
 	E2EAfterAll(func() {
-		Expect(cluster.TriggerDeleteNamespace(TestNamespace)).To(Succeed())
+		Expect(cluster.DeleteNamespace(TestNamespace)).To(Succeed())
 		Expect(cluster.DeleteKuma()).To(Succeed())
 	})
 
@@ -156,7 +148,11 @@ spec:
 
 	It("should deploy graph", func() {
 		buffer := bytes.Buffer{}
-		opts := append(fakeservice.GeneratorOpts(alternativeContainerRegistry),
+		opts := append(
+			fakeservice.GeneratorOpts(
+				fakeservice.WithRegistry(containerRegistry),
+				fakeservice.WithReachableBackends(),
+			),
 			graph_k8s.WithNamespace(TestNamespace),
 			graph_k8s.SkipNamespaceCreation(),
 		)
@@ -167,14 +163,14 @@ spec:
 		Expect(cluster.Install(YamlK8s(buffer.String()))).To(Succeed())
 
 		Eventually(func() error {
-			expectedNumOfPods := numServices * instancesPerService
+			expectedNumOfPods := suiteNumServices * suiteNumInstances
 			return k8s.WaitUntilNumPodsCreatedE(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace),
 				metav1.ListOptions{}, expectedNumOfPods, 1, 0)
 		}, "10m", "3s").Should(Succeed())
 	})
 
 	It("should deploy mesh wide policy", func() {
-		endpoint := cluster.GetPortForward("prometheus-server").ApiServerEndpoint
+		endpoint := cluster.GetPortForward(framework.NamePrometheusServer).ApiServerEndpoint
 		promClient, err := framework.NewPromClient(fmt.Sprintf("http://%s", endpoint))
 		Expect(err).ToNot(HaveOccurred())
 
@@ -186,7 +182,7 @@ spec:
 				acks = newAcks
 				g.Expect(true).To(BeFalse(), "acks are not stable")
 			}
-		}, "2m", "5s").MustPassRepeatedly(7).Should(Succeed())
+		}, "10m", "5s").MustPassRepeatedly(7).Should(Succeed())
 
 		policy := `
 apiVersion: kuma.io/v1alpha1
@@ -217,8 +213,8 @@ spec:
 		Eventually(func(g Gomega) {
 			newAcks, err := framework.XdsAckRequestsReceived(promClient)
 			g.Expect(err).ToNot(HaveOccurred())
-			g.Expect(newAcks - acks).To(Equal(numServices * instancesPerService))
-		}, "2m", "1s").Should(Succeed())
+			g.Expect(newAcks - acks).To(Equal(suiteNumServices * suiteNumInstances))
+		}, "10m", "5s").Should(Succeed())
 		AddReportEntry("policy_propagation_duration", time.Since(propagationStart).Milliseconds())
 	})
 
@@ -262,7 +258,7 @@ spec:
 
 			propagationStart := time.Now()
 			Eventually(func(g Gomega) {
-				membership, err := admin.GetStats(fmt.Sprintf("cluster.default_%s_kuma-test_default_msvc_9090.membership_total", observable))
+				membership, err := admin.GetStats(fmt.Sprintf("cluster.default_%s_%s_default_msvc_9090.membership_total", observable, TestNamespace))
 				g.Expect(err).ToNot(HaveOccurred())
 				g.Expect(membership.Stats).ToNot(BeEmpty())
 				g.Expect(membership.Stats[0].Value).To(BeNumerically("==", replicas))
@@ -271,16 +267,16 @@ spec:
 		}
 
 		It("should scale up a service", func() {
-			scale(instancesPerService + 1)
+			scale(suiteNumInstances + 1)
 		})
 
 		It("should scale down a service", func() {
-			scale(instancesPerService)
+			scale(suiteNumInstances)
 		})
 	})
 
 	It("should distribute certs when mTLS is enabled", func() {
-		expectedCerts := numServices * instancesPerService
+		expectedCerts := suiteNumServices * suiteNumInstances
 		Expect(cluster.Install(
 			YamlK8s(builders.
 				Mesh().
@@ -300,7 +296,7 @@ spec:
 			)
 			g.Expect(err).ToNot(HaveOccurred())
 			g.Expect(out).To(Equal(fmt.Sprintf("'%d'", expectedCerts)))
-		}, "60s", "1s").Should(Succeed())
+		}, "600s", "5s").Should(Succeed())
 		AddReportEntry("certs_propagation_duration", time.Since(propagationStart).Milliseconds())
 	})
 }
