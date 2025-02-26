@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
+	"github.com/kong/mesh-perf/test/framework/silent_kubectl"
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
@@ -121,18 +122,30 @@ func SavePrometheusSnapshot(cluster framework.Cluster, namespace string, hostPat
 	// extract snapshot
 	src := namespace + "/" + podName + ":" + "/data/snapshots/" + resp.Data.Name
 	dest := hostPath + "/" + resp.Data.Name
-	err = k8s.RunKubectlE(
+
+	if _, err := silent_kubectl.DoWithRetryE(
 		cluster.GetTesting(),
-		cluster.GetKubectlOptions(),
-		"cp", src, dest, "-c", NamePrometheusServer, "--retries", "10",
-	)
-	if err != nil {
+		"Retrying copying Prometheus snapshot to "+src,
+		10,
+		8*time.Second,
+		func() (string, error) {
+			if err := k8s.RunKubectlE(
+				cluster.GetTesting(),
+				cluster.GetKubectlOptions(),
+				"cp", src, dest, "-c", NamePrometheusServer, "--retries", "10",
+			); err != nil {
+				return "", err
+			}
+			return "Snapshot copied", nil
+		},
+	); err != nil {
 		return err
 	}
 
 	if _, err := os.Stat(dest); err != nil {
 		return errors.New("file was not copied")
 	}
+
 	return nil
 }
 

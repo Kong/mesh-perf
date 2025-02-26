@@ -48,10 +48,7 @@ func Simple() {
 		if containerRegistry != "" {
 			opts = append(opts,
 				WithCtlOpts(map[string]string{
-					"--registry":                containerRegistry,
-					"--dataplane-registry":      containerRegistry,
-					"--dataplane-init-registry": containerRegistry,
-					"--control-plane-registry":  containerRegistry,
+					"--dataplane-registry": containerRegistry,
 				}))
 		}
 
