@@ -29,6 +29,8 @@ jobs:
       PERF_TEST_NUM_SERVICES: ${{ inputs.num_services || 1000 }}
       PERF_TEST_INSTANCES_PER_SERVICE: ${{ inputs.instances_per_service || 2}}
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      ENV: eks
+      INIT: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,29 +46,16 @@ jobs:
           go-version-file: go.mod
       - name: make dev/tools
         run: make dev/tools
-      - name: Calculate number of nodes for cluster
-        run:
-          echo "EKS_NUM_OF_NODES=$(make number-of-nodes)" >> $GITHUB_ENV
-      - name: Start cluster
-        run: ENV=eks make start-cluster
-      - name: Export Terraform outputs
-        env:
-          ENV: eks
-        run: |
-          echo "AWS_REGION=$(make ecr-get-region)" >> $GITHUB_ENV
-          echo "ALTERNATIVE_CONTAINER_REGISTRY=$(make ecr-get-registry)" >> $GITHUB_ENV
-      - name: Configure kubectl
-        run: aws eks --region $AWS_REGION update-kubeconfig --name mesh-perf
       - name: Get version
         id: version
         run: |
           version="${{ inputs.mesh_version }}"
           if [[ -z "${version}" ]]; then
-            version=$(curl --silent -L https://docs.konghq.com/mesh/installer.sh  | VERSION=preview sh -s - --print-version | tail -n1)
+            version=$(curl --silent -L https://docs.konghq.com/mesh/installer.sh | VERSION=preview sh -s - --print-version | tail -n1)
           fi
           echo "PERF_TEST_MESH_VERSION=${version}" >> ${GITHUB_ENV}
-      - name: Upload images to ECR
-        run: PERF_TEST_MESH_VERSION="${{ env.PERF_TEST_MESH_VERSION }}" make ecr-push
+      - name: Start cluster
+        run: make infra/create
       - name: Run tests
         env:
           PERF_TEST_STABILIZATION_SLEEP: 30s
@@ -112,4 +101,4 @@ jobs:
           go run ./tools/reports/main.go /tmp/perf-test-reports/*
       - name: Destroy cluster
         if: always()
-        run: ENV=eks make destroy-cluster
+        run: make infra/destroy

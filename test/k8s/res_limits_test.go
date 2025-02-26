@@ -34,9 +34,6 @@ import (
 )
 
 func ResourceLimits() {
-
-	var alternativeContainerRegistry string
-
 	BeforeAll(func() {
 		opts := []KumaDeploymentOption{
 			WithCtlOpts(map[string]string{
@@ -52,12 +49,10 @@ func ResourceLimits() {
 			}),
 		}
 
-		alternativeContainerRegistry, _ = os.LookupEnv("ALTERNATIVE_CONTAINER_REGISTRY")
-
-		if alternativeContainerRegistry != "" {
+		if containerRegistry != "" {
 			opts = append(opts,
 				WithCtlOpts(map[string]string{
-					"--dataplane-registry": alternativeContainerRegistry,
+					"--dataplane-registry": containerRegistry,
 				}))
 		}
 
@@ -195,8 +190,8 @@ spec:
 
 			buffer := bytes.Buffer{}
 			fakeServiceRegistry := "nicholasjackson"
-			if alternativeContainerRegistry != "" {
-				fakeServiceRegistry = alternativeContainerRegistry
+			if containerRegistry != "" {
+				fakeServiceRegistry = containerRegistry
 			}
 			opts := append(
 				fakeservice.GeneratorOpts(

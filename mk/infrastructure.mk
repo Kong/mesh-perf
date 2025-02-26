@@ -1,71 +1,97 @@
-TF_CMD = $(TERRAFORM) -chdir=$(DIR)
+AWS_REGION ?= us-west-1
 
+# ENV controls which component/environment Terraform will operate on. It defaults
+# to "local" if not explicitly set, and is used when generating the -chdir flag for
+# Terraform commands (e.g., -chdir=$(local_DIR) if ENV=local).
+ENV ?= local
+
+# Enabling DEBUG will configure certain Terraform resources more explicitly, increase logging,
+# and, for example, install a metrics server in EKS clusters.
 DEBUG := $(or $(DEBUG),$(or $(RUNNER_DEBUG),false))
-# If DEBUG is true, force AWS_REGION=us-west-2 (to create a manager prometheus workspace,
-# which is unavailable in us-west-1). Otherwise, use the user-provided AWS_REGION or default to us-west-1.
-AWS_REGION := $(if $(filter true,$(DEBUG)),us-west-2,$(or $(AWS_REGION),us-west-1))
 
-CONTAINER_REGISTRY = $(shell $(TERRAFORM) -chdir=$(ecr_DIR) output -json | jq --raw-output '.registry.value // ""')
+# Additional Terraform variables for the EKS component
+eks_TF_VARS += -var="ci=$(or $(CI),false)"
+eks_TF_VARS += -var="debug=$(DEBUG)"
+eks_TF_VARS += -var="region=$(AWS_REGION)"
+eks_TF_VARS += -var='availability_zones=["$(AWS_REGION)b","$(AWS_REGION)c"]'
+eks_TF_VARS += -var="nodes_number=$(shell $(E2E_TF_VARS) go run tools/eksformula/main.go)"
 
-ENV_VARS += -var="ci=$(or $(CI),false)"
-ENV_VARS += -var="debug=$(DEBUG)"
-vpc_ENV_VARS += -var="region=$(AWS_REGION)"
-vpc_ENV_VARS += -var='availability_zones=["$(AWS_REGION)b", "$(AWS_REGION)c"]'
-eks_ENV_VARS += -var="nodes_number=$(shell $(E2E_ENV_VARS) go run tools/eksformula/main.go)"
+# MAKE_INFRA_TARGETS macro
+# 1. Stores the relative path to "$(TOP)/infrastructure/$(1)" in "$(1)_DIR".
+# 2. If "$(1)_TF_VARS" is defined, assigns that value to VARS for the
+#    "terraform/apply/..." and "terraform/destroy/..." targets.
+# 3. Defines "infra/create/$(1)" to:
+#    - Optionally invoke "terraform/init/..." if INIT != false.
+#    - Invoke "terraform/apply/..." with CHDIR set to "$($(1)_DIR)" (used by TF_CMD).
+#    - Also depend on "ecr/push" if $(1) is "eks".
+# 4. Defines "infra/destroy/$(1)" to invoke "terraform/destroy/..." for the component.
+define MAKE_INFRA_TARGETS
+$(1)_DIR := $(shell realpath --relative-to="$(TOP)" "$(TOP)/infrastructure/$(1)")
 
-# Define top-level directories relative to the TOP directory.
-DIR_INFRASTRUCTURE := $(shell realpath --relative-to=$(TOP) $(TOP)/infrastructure)
-DIR_AWS := $(shell realpath --relative-to=$(TOP) $(DIR_INFRASTRUCTURE)/aws)
+# Apply/destroy targets use $(1)_TF_VARS if defined.
+terraform/apply/$$($(1)_DIR) terraform/destroy/$$($(1)_DIR): VARS = $($(1)_TF_VARS)
 
-# Define directories for each AWS component for portability.
-vpc_DIR := $(shell realpath --relative-to=$(TOP) $(DIR_AWS)/vpc)
-ecr_DIR := $(shell realpath --relative-to=$(TOP) $(DIR_AWS)/ecr)
-eks_DIR := $(shell realpath --relative-to=$(TOP) $(DIR_AWS)/eks)
-monitoring_DIR := $(shell realpath --relative-to=$(TOP) $(DIR_AWS)/monitoring)
+.PHONY: infra/create/$(1) infra/destroy/$(1)
 
-# List AWS components to easily add or remove items from the build process.
-COMPONENTS := vpc ecr eks monitoring
+# Both create/destroy targets share CHDIR based on $(1)_DIR.
+infra/create/$(1) infra/destroy/$(1): CHDIR = $$($(1)_DIR)
 
-# Macro to generate 'apply' and 'destroy' targets for each AWS component.
-# $(1) is the component name (vpc, ecr, eks, monitoring).
-# The 'apply' target conditionally runs an initialization step (if INIT is not "false")
-# and then calls the Terraform apply command.
-# The 'destroy' target calls the Terraform destroy command.
-# For each component, we depend on e.g. terraform/apply/infrastructure/aws/vpc
-# which will match the pattern terraform/apply/%.
-define MAKE_AWS_TARGETS
-.PHONY: aws/apply/$(1) aws/destroy/$(1)
-aws/apply/$(1): $(if $(filter-out false,$(INIT)),terraform/init/$($(1)_DIR)) terraform/apply/$($(1)_DIR)
-aws/destroy/$(1): terraform/destroy/$($(1)_DIR)
+infra/create/$(1): \
+  $(if $(filter-out false,$(INIT)),terraform/init/$$($(1)_DIR)) \
+  terraform/apply/$$($(1)_DIR) \
+  $(if $(filter eks,$(1)),ecr/push,)
+
+infra/destroy/$(1): \
+  $(if $(filter-out false,$(INIT)),terraform/init/$$($(1)_DIR)) \
+  terraform/destroy/$$($(1)_DIR)
 endef
 
-# Generate targets for each AWS component.
-$(foreach comp, $(COMPONENTS), $(eval $(call MAKE_AWS_TARGETS,$(comp))))
+# Automatically discover each subdirectory in "$(TOP)/infrastructure/" (e.g., eks, local, etc.),
+# interpret it as a "component," and then generate the associated create/destroy targets via
+# the MAKE_INFRA_TARGETS macro. This approach avoids manually listing components and updates
+# automatically as new directories appear.
+$(foreach component,$(notdir $(wildcard $(TOP)/infrastructure/*)),$(eval $(call MAKE_INFRA_TARGETS,$(component))))
 
-# Terraform initialization: sets DIR to the target stem and runs init with optional flags.
+# Top-level targets forwarding to infra/create/$(ENV) and infra/destroy/$(ENV).
+.PHONY: infra/create infra/destroy
+infra/create infra/destroy:
+	@$(MAKE) $@/$(ENV)
+
+# -------------------------------------------------------------------
+# Terraform
+# -------------------------------------------------------------------
+
+# TF_CMD is a generic Terraform command that sets its working directory via CHDIR, if provided,
+# or defaults to "$($(ENV)_DIR)". For example, if ENV=eks, the directory is "$(eks_DIR)".
+# If ENV is not defined, it defaults to "local", so the directory becomes "$(local_DIR)".
+# Individual targets can override CHDIR when needed.
+TF_CMD = $(TERRAFORM) -chdir=$(or $(CHDIR),$($(ENV)_DIR))
+
+# Initialize Terraform in the specified directory.
+# - DIR is dynamically set to $*, which represents the matched part of the target.
 .PHONY: terraform/init/%
-terraform/init/%: DIR=$*
+terraform/init/%: CHDIR = $*
 terraform/init/%:
 	$(TF_CMD) init$(if $(UPGRADE), -upgrade,)$(if $(RECONFIGURE), -reconfigure,)
 
-# Generic rule for both apply and destroy.
-# It extracts the command (apply or destroy) from the target name, sets the working directory,
-# injects any extra variables via $(VARS), and appends -auto-approve if AUTO_APPROVE isn’t "false".
+# Generic rule to apply or destroy Terraform configurations.
+# - Uses $* to dynamically extract the directory path from the target.
+# - Extracts "apply" or "destroy" from the target name via $(word 2,$(subst /,,$@)).
+# - Passes component-specific variables via $(VARS).
+# - Auto-approval is enabled unless AUTO_APPROVE is explicitly set to false.
 .PHONY: terraform/apply/% terraform/destroy/%
-## For certain directories, assign target-specific variable values for Terraform.
-terraform/apply/$(vpc_DIR) terraform/destroy/$(vpc_DIR): VARS = $(vpc_ENV_VARS)
-terraform/apply/$(eks_DIR) terraform/destroy/$(eks_DIR): VARS = $(ENV_VARS) $(eks_ENV_VARS)
-terraform/apply/$(monitoring_DIR) terraform/destroy/$(monitoring_DIR): VARS = $(ENV_VARS)
 terraform/apply/% terraform/destroy/%:
-	$(TERRAFORM) -chdir=$* $(word 2,$(subst /, ,$@)) $(if $(VARS),$(VARS))$(if $(filter false,$(AUTO_APPROVE)),, -auto-approve)
+	@$(TERRAFORM) -chdir=$* \
+		$(word 2,$(subst /, ,$@)) \
+		$(if $(VARS),$(VARS)) \
+		$(if $(filter false,$(AUTO_APPROVE)),,-auto-approve)
 
-.PHONY: aws/destroy
-aws/destroy: aws/destroy/ecr aws/destroy/eks aws/destroy/vpc
+# -------------------------------------------------------------------
+# ECR (Elastic Container Registry)
+# -------------------------------------------------------------------
 
-.PHONY: aws/create
-aws/create: aws/apply/vpc aws/apply/eks aws/apply/ecr ecr/push
-
-#ecr/%: export CONTAINER_REGISTRY=$(CONTAINER_REGISTRY)
+# Fetch the ECR container registry URL dynamically at runtime.
+CONTAINER_REGISTRY = $(shell $(TF_CMD) output -json | jq --raw-output '.registry.value // ""')
 
 .PHONY: ecr/authenticate
 ecr/authenticate:
@@ -73,12 +99,15 @@ ecr/authenticate:
 
 .PHONY: check-perf-test-mesh-version
 check-perf-test-mesh-version:
-	@if [[ -z "$(PERF_TEST_MESH_VERSION)" ]]; then echo "PERF_TEST_MESH_VERSION must be defined"; exit 1; fi
+	@if [ -z "$(PERF_TEST_MESH_VERSION)" ]; then \
+	  echo "PERF_TEST_MESH_VERSION must be defined"; \
+	  exit 1; \
+	fi
 
 .PHONY: ecr/push/%
 ecr/push/%: check-perf-test-mesh-version
 	docker pull kong/$*:$(PERF_TEST_MESH_VERSION) --platform linux/arm64 && \
-	docker tag kong/$*:$(PERF_TEST_MESH_VERSION)-arm64 $(CONTAINER_REGISTRY)/$*:$(PERF_TEST_MESH_VERSION) && \
+	docker tag kong/$*:$(PERF_TEST_MESH_VERSION) $(CONTAINER_REGISTRY)/$*:$(PERF_TEST_MESH_VERSION) && \
 	docker push $(CONTAINER_REGISTRY)/$*:$(PERF_TEST_MESH_VERSION)
 
 .PHONY: ecr/push/fake-service

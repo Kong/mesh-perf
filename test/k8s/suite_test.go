@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"slices"
+	"strconv"
 	"testing"
 	"time"
 
@@ -13,23 +15,28 @@ import (
 	. "github.com/onsi/gomega"
 	k8s_strings "k8s.io/utils/strings"
 
+	"github.com/kong/mesh-perf/test/framework"
+
 	"github.com/kumahq/kuma/pkg/test"
 	. "github.com/kumahq/kuma/test/framework"
 	obs "github.com/kumahq/kuma/test/framework/deployments/observability"
-
-	"github.com/kong/mesh-perf/test/framework"
 )
 
 func TestE2E(t *testing.T) {
 	test.RunE2ESpecs(t, "E2E Kubernetes Suite")
 }
 
-var cluster *K8sCluster
-var stabilizationSleep time.Duration
+const obsNamespace = "monitoring"
 
-const obsNamespace = "mesh-observability"
-
-var kmeshLicense string
+var (
+	cluster            *K8sCluster
+	stabilizationSleep time.Duration
+	suiteNumServices   int
+	suiteNumInstances  int
+	kmeshLicense       string
+	containerRegistry  string
+	debug              bool
+)
 
 func requireVar(key string) string {
 	val, ok := os.LookupEnv(key)
@@ -46,6 +53,12 @@ var _ = BeforeSuite(func() {
 		kubeConfigPath = "${HOME}/.kube/config"
 	}
 
+	if v, ok := os.LookupEnv("DEBUG"); ok {
+		debug = slices.Contains([]string{"1", "true"}, v)
+	}
+
+	containerRegistry = os.Getenv("CONTAINER_REGISTRY")
+
 	kmeshLicense = requireVar("KMESH_LICENSE")
 	sleep := requireVar("PERF_TEST_STABILIZATION_SLEEP")
 	sleepDur, err := time.ParseDuration(sleep)
@@ -54,48 +67,51 @@ var _ = BeforeSuite(func() {
 	}
 	stabilizationSleep = sleepDur
 
+	suiteNumServices, err = strconv.Atoi(requireVar("PERF_TEST_NUM_SERVICES"))
+	Expect(err).ToNot(HaveOccurred(), "invalid value of PERF_TEST_NUM_SERVICES")
+
+	suiteNumInstances, err = strconv.Atoi(requireVar("PERF_TEST_INSTANCES_PER_SERVICE"))
+	Expect(err).ToNot(HaveOccurred(), "invalid value of PERF_TEST_INSTANCES_PER_SERVICE")
+
 	cluster = NewK8sCluster(NewTestingT(), "mesh-perf", true)
 
 	cluster.WithKubeConfig(os.ExpandEnv(kubeConfigPath))
+
+	obsComponents := []obs.Component{obs.PrometheusComponent}
+	if debug {
+		obsComponents = append(obsComponents, obs.GrafanaComponent)
+	}
+
 	Expect(cluster.Install(obs.Install(
 		"obs",
 		obs.WithNamespace(obsNamespace),
-		obs.WithComponents(obs.PrometheusComponent, obs.GrafanaComponent),
+		obs.WithComponents(obsComponents...),
 	))).To(Succeed())
 
-	// Prometheus PVCs are tied to specific nodes and can't be moved if we change the node
-	// where Prometheus runs. To fix this, we create a new PVC and replace it in the Prometheus
-	// deployment. The storage size is increased to 80GB to avoid running out of space when
-	// deploying 2000 workloads, as the default 8GB might not be enough and could cause hard-to-debug issues.
-	Expect(cluster.Install(YamlK8sObject(framework.PVC80GiPrometheus(obsNamespace)))).To(Succeed())
-
-	patchObs := framework.NewPatcher(
-		cluster,
-		obsNamespace,
-		// We explicitly specify the node where observability components like Prometheus are deployed
-		// to ensure they are not disrupted by other workloads. When deploying a large number of services,
-		// Prometheus resource requirements grow quickly, and if it shares a node with many other pods,
-		// there may not be enough resources available for it to function properly.
-		framework.SetObservabilityTolerations(),
-	)
+	patchObs := framework.NewPatcher(cluster, obsNamespace)
 
 	Expect(patchObs(
+		framework.KindDeployment,
 		framework.NamePrometheusServer,
-		framework.EnablePrometheusAdminAPIPatch(),
-		framework.SetPrometheusResourcesPatch(),
-		framework.SetPrometheusPVC80GiPatch(),
+		slices.Concat(
+			framework.EnablePrometheusAdminAPIPatch(),
+			framework.SetPrometheusResourcesPatch(),
+		),
 	)).To(Succeed())
 
-	Expect(patchObs(framework.NamePrometheusKubeStateMetrics)).To(Succeed())
-	Expect(patchObs(framework.NameGrafana)).To(Succeed())
+	if debug {
+		Expect(patchObs(framework.KindDeployment, framework.NameGrafana, framework.GrafanaDeploymentPatch())).To(Succeed())
+		Expect(patchObs(framework.KindService, framework.NameGrafana, framework.GrafanaServicePatch())).To(Succeed())
+	}
 
 	Expect(framework.InstallPrometheusPushgateway(cluster, obsNamespace))
+
 	Eventually(func() error {
 		return framework.PortForwardPrometheusPushgateway(cluster, obsNamespace)
-	}, "30s", "1s").Should(Succeed())
+	}, "300s", "1s").Should(Succeed())
 	Eventually(func() error {
 		return framework.PortForwardPrometheusServer(cluster, obsNamespace)
-	}, "30s", "1s").Should(Succeed())
+	}, "300s", "1s").Should(Succeed())
 })
 
 var _ = AfterSuite(func() {

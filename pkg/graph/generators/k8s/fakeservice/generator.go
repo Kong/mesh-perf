@@ -139,6 +139,15 @@ func configureReachableServices(formatters k8s.Formatters, svc apis.Service, tem
 		template.Annotations = map[string]string{}
 	}
 
+	if len(names) == 0 {
+		names = append(names, fmt.Sprintf(
+			"%s_%s_svc_%d",
+			formatters.Name(svc.Idx),
+			template.GetNamespace(),
+			9090,
+		))
+	}
+
 	template.Annotations[metadata.KumaTransparentProxyingReachableServicesAnnotation] = strings.Join(names, ",")
 
 	return nil
