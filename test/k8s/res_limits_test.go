@@ -14,6 +14,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/gruntwork-io/terratest/modules/logger"
+	"github.com/gruntwork-io/terratest/modules/retry"
 	"github.com/gruntwork-io/terratest/modules/testing"
 	"k8s.io/apimachinery/pkg/watch"
 
@@ -111,6 +112,7 @@ spec:
 		var instancesPerService = 1
 
 		adjustResource := func(miliCPU, memMega int, addGoMemLimitEnv bool, waitForComplete bool) {
+			GinkgoHelper()
 			Logf("adjusting control plane resource limits to cpu %dm, memory %dMi\n", miliCPU, memMega)
 			kumaNsOptions := cluster.GetKubectlOptions(Config.KumaNamespace)
 
@@ -165,25 +167,63 @@ spec:
 				patchJson = append(patchJson, fmt.Sprintf(`{"op": "remove", "path": "/spec/template/spec/containers/0/env/%s"}`, fmt.Sprintf("%d", idxMaxProcs)))
 			}
 
-			err = k8s.RunKubectlE(
+			Expect(k8s.RunKubectlE(
 				cluster.GetTesting(),
 				kumaNsOptions,
-				"patch", "deployment", Config.KumaServiceName,
+				"patch",
+				"deployment",
+				Config.KumaServiceName,
 				"--type=json",
-				"--patch", fmt.Sprintf("[%s]", strings.Join(patchJson, ",")),
-			)
-			Expect(err).ToNot(HaveOccurred())
+				"--patch",
+				fmt.Sprintf("[%s]", strings.Join(patchJson, ",")),
+			)).To(Succeed())
 
 			if waitForComplete {
-				err = k8s.RunKubectlE(
+				Expect(k8s.RunKubectlE(
 					cluster.GetTesting(),
 					kumaNsOptions,
-					"rollout", "status", "deployment", Config.KumaServiceName)
+					"rollout",
+					"status",
+					"deployment",
+					Config.KumaServiceName,
+				)).To(Succeed())
+
+				time.Sleep(3 * time.Second)
+
+				Expect(k8s.WaitUntilDeploymentAvailableE(
+					cluster.GetTesting(),
+					kumaNsOptions,
+					Config.KumaServiceName,
+					12,
+					10*time.Second,
+				)).To(Succeed())
+
+				output, err := retry.DoWithRetryE(
+					cluster.GetTesting(),
+					"wait for control plane to be ready",
+					30,
+					10*time.Second,
+					func() (string, error) {
+						logs, err := cluster.GetKumaCPLogs()
+						if err != nil {
+							return "", err
+						}
+
+						if strings.Contains(logs, fmt.Sprintf("successfully acquired lease %s/cp-leader-lease", Config.KumaNamespace)) {
+							return "adjusting control plane resource limits completed", nil
+						}
+
+						return "", errors.New("control plane is not ready - leader is missing")
+					},
+				)
 				Expect(err).ToNot(HaveOccurred())
+				Logf(output)
 			}
 		}
 
 		deployDPs := func() {
+			GinkgoHelper()
+
 			Logf("deploying %d services and %d instances per service\n", numServices, instancesPerService)
 
 			svcGraph := apis.GenerateRandomMesh(872835240, numServices, 50, instancesPerService, instancesPerService)
@@ -209,6 +249,8 @@ spec:
 		}
 
 		waitForDPs := func(ret chan<- bool) {
+			GinkgoHelper()
+
 			Logf("waiting for the data planes to become ready\n")
 			go func() {
 				defer GinkgoRecover()
@@ -262,6 +304,8 @@ spec:
 		}
 
 		watchControlPlane := func(ctx context.Context, errCh chan<- error) {
+			GinkgoHelper()
+
 			Logf("monitoring health of control plane pods\n")
 
 			clientset, err := silent_kubectl.GetKubernetesClientFromOptionsE(cluster.GetTesting(), cluster.GetKubectlOptions(Config.KumaNamespace))
@@ -320,6 +364,8 @@ spec:
 		}
 
 		scaleCPToOOMKilled := func(memory int, addGoMemLimit bool) (error, time.Duration) {
+			GinkgoHelper()
+
 			By("Scale up the CP using full resources")
 			adjustResource(cpu, maxMemory, true, true)
 

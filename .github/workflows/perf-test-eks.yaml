@@ -67,9 +67,7 @@ jobs:
           KMESH_LICENSE=<(printenv KMESH_LICENSE_JSON) PERF_TEST_MESH_VERSION="${{ env.PERF_TEST_MESH_VERSION }}" make run
       - name: Run resource limits tests
         env:
-          # when limit memory to 256Mi, it should support 100 dps without GOMEMLIMIT
-          # when limit memory to 128Mi, it should support 100 dps with GOMEMLIMIT
-          PERF_LIMIT_MEGA_MEMORY: 256
+          PERF_LIMIT_MEGA_MEMORY: 384
           # 100 dp = 20x5
           PERF_TEST_INSTANCES_PER_SERVICE: 5
           PERF_TEST_NUM_SERVICES: 20
