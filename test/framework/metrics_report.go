@@ -2,9 +2,12 @@ package framework
 
 import (
 	"github.com/gruntwork-io/terratest/modules/helm"
+	"github.com/gruntwork-io/terratest/modules/retry"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	prometheus_push "github.com/prometheus/client_golang/prometheus/push"
+
+	"time"
 
 	"github.com/kumahq/kuma/test/framework"
 )
@@ -23,18 +26,29 @@ func init() {
 }
 
 func ReportSpecStart(cluster *framework.K8sCluster) error {
-	endpoint := cluster.GetPortForward(prometheusPushgatewayApp).ApiServerEndpoint
-	return push(endpoint, 1)
+	return push(cluster, 1)
 }
 
 func ReportSpecEnd(cluster *framework.K8sCluster) error {
-	endpoint := cluster.GetPortForward(prometheusPushgatewayApp).ApiServerEndpoint
-	return push(endpoint, 0)
+	return push(cluster, 0)
 }
 
-func push(endpoint string, value float64) error {
+func push(cluster *framework.K8sCluster, value float64) error {
+	endpoint := cluster.GetPortForward(prometheusPushgatewayApp).ApiServerEndpoint
 	testStatusStarted.WithLabelValues(ginkgo.CurrentSpecReport().FullText()).Set(value)
-	return prometheus_push.New(endpoint, "mesh_perf_test").Gatherer(registry).Push()
+	_, err := retry.DoWithRetryableErrorsE(
+		cluster.GetTesting(),
+		"push metrics",
+		map[string]string{
+			"connection refused": "connect: connection refused",
+		},
+		60,
+		10*time.Second,
+		func() (string, error) {
+			return "", prometheus_push.New(endpoint, "mesh_perf_test").Gatherer(registry).Push()
+		},
+	)
+	return err
 }
 
 func InstallPrometheusPushgateway(cluster *framework.K8sCluster, ns string) error {
