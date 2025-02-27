@@ -102,13 +102,12 @@ spec:
 	})
 
 	BeforeEach(func() {
-		Expect(framework.ReportSpecStart(cluster)).To(Succeed())
+		Expect(framework.PushReportSpecMetric(cluster, obsNamespace, 1)).To(Succeed())
 		start = time.Now()
 	})
 
 	AfterEach(func(ctx context.Context) {
-		endpoint := cluster.GetPortForward(framework.NamePrometheusServer).ApiServerEndpoint
-		promClient, err := framework.NewPromClient(fmt.Sprintf("http://%s", endpoint))
+		promClient, err := framework.NewPromClient(cluster, obsNamespace)
 		Expect(err).ToNot(HaveOccurred())
 
 		stopCh := make(chan struct{})
@@ -129,7 +128,7 @@ spec:
 			}
 		}
 
-		Expect(framework.ReportSpecEnd(cluster)).To(Succeed())
+		Expect(framework.PushReportSpecMetric(cluster, obsNamespace, 0)).To(Succeed())
 		end := time.Now()
 		AddReportEntry("duration", end.Sub(start).Milliseconds())
 	})
@@ -168,8 +167,7 @@ spec:
 	})
 
 	It("should deploy mesh wide policy", func(ctx context.Context) {
-		endpoint := cluster.GetPortForward(framework.NamePrometheusServer).ApiServerEndpoint
-		promClient, err := framework.NewPromClient(fmt.Sprintf("http://%s", endpoint))
+		promClient, err := framework.NewPromClient(cluster, obsNamespace)
 		Expect(err).ToNot(HaveOccurred())
 
 		var acks int

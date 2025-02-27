@@ -106,13 +106,6 @@ var _ = BeforeSuite(func() {
 	}
 
 	Expect(framework.InstallPrometheusPushgateway(cluster, obsNamespace))
-
-	Eventually(func() error {
-		return framework.PortForwardPrometheusPushgateway(cluster, obsNamespace)
-	}, "300s", "1s").Should(Succeed())
-	Eventually(func() error {
-		return framework.PortForwardPrometheusServer(cluster, obsNamespace)
-	}, "300s", "1s").Should(Succeed())
 })
 
 var _ = AfterSuite(func() {

@@ -69,7 +69,7 @@ func ResourceLimits() {
 	})
 
 	BeforeEach(func() {
-		Expect(framework.ReportSpecStart(cluster)).To(Succeed())
+		Expect(framework.PushReportSpecMetric(cluster, obsNamespace, 1)).To(Succeed())
 	})
 
 	E2EAfterAll(func() {

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
+	"github.com/gruntwork-io/terratest/modules/retry"
 	"github.com/kong/mesh-perf/test/framework/silent_kubectl"
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
@@ -22,6 +23,7 @@ import (
 type PatchKind string
 
 const (
+	PortPrometheusServer           = 9090
 	NamePrometheusServer           = "prometheus-server"
 	NameGrafana                    = "grafana"
 	KindDeployment       PatchKind = "deployment"
@@ -156,26 +158,22 @@ type promSnapshotResponse struct {
 	} `json:"data"`
 }
 
-func PortForwardPrometheusServer(cluster *framework.K8sCluster, ns string) error {
-	return cluster.PortForwardService(NamePrometheusServer, ns, 9090)
-}
-
 type PromClient struct {
 	queryClient v1.API
 }
 
-func NewPromClient(url string) (*PromClient, error) {
-	client, err := api.NewClient(api.Config{
-		Address: url,
-	})
-
+func NewPromClient(cluster *framework.K8sCluster, ns string) (*PromClient, error) {
+	endpoint, err := GetApiServerEndpoint(cluster, ns, NamePrometheusServer, PortPrometheusServer)
 	if err != nil {
 		return nil, err
 	}
 
-	return &PromClient{
-		queryClient: v1.NewAPI(client),
-	}, nil
+	client, err := api.NewClient(api.Config{Address: "http://" + endpoint})
+	if err != nil {
+		return nil, err
+	}
+
+	return &PromClient{queryClient: v1.NewAPI(client)}, nil
 }
 
 var ErrNoResults = errors.New("no results found for the query")
@@ -196,4 +194,31 @@ func (p *PromClient) QueryIntValue(ctx context.Context, query string) (int, erro
 	}
 
 	return int(vector[0].Value), nil
+}
+
+func GetApiServerEndpoint(cluster *framework.K8sCluster, ns, app string, port int) (string, error) {
+	// The API Server or other control plane components may scale up after the cluster starts,
+	// invalidating an existing port forward. To ensure a valid connection, always close any
+	// existing port forward before creating a new one.
+	if cluster.GetPortForward(app).ApiServerEndpoint != "" {
+		cluster.ClosePortForward(app)
+	}
+
+	if err := cluster.PortForwardService(app, ns, port); err != nil {
+		return "", err
+	}
+
+	return retry.DoWithRetryE(
+		cluster.GetTesting(),
+		"create port forward for prometheus-pushgateway",
+		60,
+		10*time.Second,
+		func() (string, error) {
+			if err := cluster.PortForwardService(app, ns, port); err != nil {
+				return "", err
+			}
+
+			return cluster.GetPortForward(app).ApiServerEndpoint, nil
+		},
+	)
 }
