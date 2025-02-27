@@ -117,4 +117,4 @@ ecr/push/fake-service:
 	docker push $(CONTAINER_REGISTRY)/fake-service:v0.26.0
 
 .PHONY: ecr/push
-ecr/push: ecr/authenticate ecr/push/kuma-cp ecr/push/kuma-dp ecr/push/kuma-init ecr/push/kumactl ecr/push/fake-service
+ecr/push: ecr/authenticate ecr/push/kuma-dp ecr/push/fake-service

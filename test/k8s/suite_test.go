@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gruntwork-io/terratest/modules/k8s"
 	"github.com/kennygrant/sanitize"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -105,13 +106,6 @@ var _ = BeforeSuite(func() {
 	}
 
 	Expect(framework.InstallPrometheusPushgateway(cluster, obsNamespace))
-
-	Eventually(func() error {
-		return framework.PortForwardPrometheusPushgateway(cluster, obsNamespace)
-	}, "300s", "1s").Should(Succeed())
-	Eventually(func() error {
-		return framework.PortForwardPrometheusServer(cluster, obsNamespace)
-	}, "300s", "1s").Should(Succeed())
 })
 
 var _ = AfterSuite(func() {
@@ -122,6 +116,14 @@ var _ = AfterSuite(func() {
 	if cluster != nil {
 		Expect(framework.SavePrometheusSnapshot(cluster, obsNamespace, promSnapshotsDir)).To(Succeed())
 		Expect(cluster.DeleteDeployment("obs")).To(Succeed())
+		Expect(k8s.RunKubectlE(
+			cluster.GetTesting(),
+			cluster.GetKubectlOptions(),
+			"wait",
+			"--for=delete",
+			"--timeout=30m",
+			fmt.Sprintf("namespace/%s", obsNamespace),
+		)).To(Succeed())
 	}
 })
 
