@@ -1,20 +1,29 @@
 package framework
 
 import (
-	"strings"
+	"context"
+	"errors"
+	"syscall"
 	"time"
 )
 
-func XdsDeliveryCount(promClient *PromClient) (int, error) {
-	return promClient.QueryIntValue("xds_delivery_count")
+func XdsDeliveryCount(ctx context.Context, promClient *PromClient) (int, error) {
+	return promClient.QueryIntValue(ctx, "xds_delivery_count")
 }
 
-func XdsAckRequestsReceived(promClient *PromClient) (int, error) {
-	return promClient.QueryIntValue(`sum(xds_requests_received{confirmation="ACK"})`)
+func XdsAckRequestsReceived(ctx context.Context, promClient *PromClient) (int, error) {
+	return promClient.QueryIntValue(ctx, `sum(xds_requests_received{confirmation="ACK"})`)
 }
 
-func WatchXdsDeliveryCount(promClient *PromClient, stopCh <-chan struct{}, metricCh chan<- int, errCh chan<- error) {
+func WatchXdsDeliveryCount(
+	ctx context.Context,
+	promClient *PromClient,
+	stopCh <-chan struct{},
+	metricCh chan<- int,
+	errCh chan<- error,
+) {
 	lastVal := -1 // unreachable value for counter
+
 	for {
 		select {
 		case <-stopCh:
@@ -22,15 +31,18 @@ func WatchXdsDeliveryCount(promClient *PromClient, stopCh <-chan struct{}, metri
 		default:
 		}
 
-		val, err := XdsDeliveryCount(promClient)
-		if err != nil && !strings.Contains(err.Error(), "No results found for the query") {
+		val, err := XdsDeliveryCount(ctx, promClient)
+		switch {
+		case errors.Is(err, syscall.ECONNREFUSED):
+		case errors.Is(err, ErrNoResults):
+		case err != nil:
 			errCh <- err
 			return
-		}
-		if lastVal != val {
+		case lastVal != val:
 			metricCh <- val
 			lastVal = val
 		}
+
 		time.Sleep(3 * time.Second)
 	}
 }

@@ -2,6 +2,7 @@ package k8s_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -105,7 +106,7 @@ spec:
 		start = time.Now()
 	})
 
-	AfterEach(func() {
+	AfterEach(func(ctx context.Context) {
 		endpoint := cluster.GetPortForward(framework.NamePrometheusServer).ApiServerEndpoint
 		promClient, err := framework.NewPromClient(fmt.Sprintf("http://%s", endpoint))
 		Expect(err).ToNot(HaveOccurred())
@@ -114,7 +115,7 @@ spec:
 		metricCh := make(chan int)
 		errCh := make(chan error)
 
-		go framework.WatchXdsDeliveryCount(promClient, stopCh, metricCh, errCh)
+		go framework.WatchXdsDeliveryCount(ctx, promClient, stopCh, metricCh, errCh)
 		defer close(stopCh)
 
 	Loop:
@@ -166,14 +167,14 @@ spec:
 		}, "10m", "3s").Should(Succeed())
 	})
 
-	It("should deploy mesh wide policy", func() {
+	It("should deploy mesh wide policy", func(ctx context.Context) {
 		endpoint := cluster.GetPortForward(framework.NamePrometheusServer).ApiServerEndpoint
 		promClient, err := framework.NewPromClient(fmt.Sprintf("http://%s", endpoint))
 		Expect(err).ToNot(HaveOccurred())
 
 		var acks int
 		Eventually(func(g Gomega) {
-			newAcks, err := framework.XdsAckRequestsReceived(promClient)
+			newAcks, err := framework.XdsAckRequestsReceived(ctx, promClient)
 			g.Expect(err).ToNot(HaveOccurred())
 			if acks != newAcks {
 				acks = newAcks
@@ -208,7 +209,7 @@ spec:
 		propagationStart := time.Now()
 
 		Eventually(func(g Gomega) {
-			newAcks, err := framework.XdsAckRequestsReceived(promClient)
+			newAcks, err := framework.XdsAckRequestsReceived(ctx, promClient)
 			g.Expect(err).ToNot(HaveOccurred())
 			g.Expect(newAcks - acks).To(Equal(suiteNumServices * suiteNumInstances))
 		}, "10m", "5s").Should(Succeed())

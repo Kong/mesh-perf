@@ -178,8 +178,10 @@ func NewPromClient(url string) (*PromClient, error) {
 	}, nil
 }
 
-func (p *PromClient) QueryIntValue(query string) (int, error) {
-	result, _, err := p.queryClient.Query(context.Background(), query, time.Now())
+var ErrNoResults = errors.New("no results found for the query")
+
+func (p *PromClient) QueryIntValue(ctx context.Context, query string) (int, error) {
+	result, _, err := p.queryClient.Query(ctx, query, time.Now())
 	if err != nil {
 		return 0, err
 	}
@@ -190,7 +192,7 @@ func (p *PromClient) QueryIntValue(query string) (int, error) {
 	}
 
 	if len(vector) == 0 {
-		return 0, fmt.Errorf("no results found for the query: %s", query)
+		return 0, ErrNoResults
 	}
 
 	return int(vector[0].Value), nil
