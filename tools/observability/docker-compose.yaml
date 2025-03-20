@@ -9,7 +9,7 @@ volumes:
 
 services:
   grafana:
-    image: grafana/grafana:9.3.2
+    image: grafana/grafana:9.3.2@sha256:2a73ae33c9f0c51af6eced2ef185d5d3682b4c378c4fdd6941a14e8ea4a3e95b
     container_name: grafana
     volumes:
       - grafana_data:/var/lib/grafana
@@ -26,7 +26,7 @@ services:
       - monitor-net
 
   prometheus:
-    image: prom/prometheus:v2.41.0
+    image: prom/prometheus:v2.41.0@sha256:1a3e9a878e50cd339ae7cf5718fda08381dda2d4ccd28e94bbaa3190d1a566c2
     container_name: prometheus
     volumes:
       - ./prometheus:/etc/prometheus

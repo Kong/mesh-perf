@@ -35,15 +35,15 @@ jobs:
       INIT: true
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/mesh-perf-ci
           role-duration-seconds: 7200
           aws-region: us-west-1
       - name: Setup go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5
         with:
           go-version-file: go.mod
       - name: make dev/tools
@@ -76,18 +76,18 @@ jobs:
             ${{ secrets.KMESH_LICENSE_JSON }}
         run: |
           KMESH_LICENSE=<(printenv KMESH_LICENSE_JSON) PERF_TEST_MESH_VERSION="${{ env.PERF_TEST_MESH_VERSION }}" make run/limits | tee /tmp/limits.out
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: test-metrics-snapshot
           path: /tmp/prom-snapshots
           retention-days: 14
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: test-reports
           path: /tmp/perf-test-reports
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: limits-output
