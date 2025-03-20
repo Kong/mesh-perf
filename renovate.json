@@ -1,7 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "github>Kong/public-shared-renovate:backend#1.4.0"
+    "github>Kong/public-shared-renovate:backend#1.4.0",
+    "github>kumahq/kuma//.renovate/go-control-plane"
   ],
   "enabledManagers": [
     "docker-compose",
