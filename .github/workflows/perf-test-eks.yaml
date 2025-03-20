@@ -76,18 +76,18 @@ jobs:
             ${{ secrets.KMESH_LICENSE_JSON }}
         run: |
           KMESH_LICENSE=<(printenv KMESH_LICENSE_JSON) PERF_TEST_MESH_VERSION="${{ env.PERF_TEST_MESH_VERSION }}" make run/limits | tee /tmp/limits.out
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: test-metrics-snapshot
           path: /tmp/prom-snapshots
           retention-days: 14
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: test-reports
           path: /tmp/perf-test-reports
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: limits-output
