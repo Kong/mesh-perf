@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {}
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "5.17.0"
+  version = "5.19.0"
 
   name = "${var.cluster_name}-vpc"
 
