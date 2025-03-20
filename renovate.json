@@ -1,0 +1,13 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "github>Kong/public-shared-renovate:backend#1.4.0"
+  ],
+  "enabledManagers": [
+    "docker-compose",
+    "github-actions",
+    "gomod",
+    "jsonnet-bundler",
+    "terraform"
+  ]
+}
