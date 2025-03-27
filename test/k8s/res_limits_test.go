@@ -363,7 +363,7 @@ spec:
 			}()
 		}
 
-		scaleCPToOOMKilled := func(memory int, addGoMemLimit bool) (error, time.Duration) {
+		scaleCPToOOMKilled := func(memory int, addGoMemLimit bool) (time.Duration, error) {
 			GinkgoHelper()
 
 			By("Scale up the CP using full resources")
@@ -393,7 +393,7 @@ spec:
 
 			printUnavailablePods(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace), metav1.ListOptions{})
 			runDuration := time.Since(timeStartPatch)
-			return err, runDuration
+			return runDuration, err
 		}
 
 		BeforeAll(func() {
@@ -508,7 +508,7 @@ spec:
 		It("should be OOM-killed without GOMEMLIMIT", func() {
 			Expect(minimalMemoryRequired).To(BeNumerically(">", 0), "load and get the minimal memory requirement should before this test")
 
-			err, runDuration := scaleCPToOOMKilled(minimalMemoryRequired, false)
+			runDuration, err := scaleCPToOOMKilled(minimalMemoryRequired, false)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("OOMKilled"), "control plane should crash with OOM Killed")
 			ranDuraionBeforeOOM = runDuration
@@ -517,7 +517,7 @@ spec:
 		It("should crash slower or not crash when control plane has GOMEMLIMIT", func() {
 			Expect(ranDuraionBeforeOOM).To(BeNumerically(">", 0), "control plane should crash with OOM Killed before this test")
 
-			err, runDuration := scaleCPToOOMKilled(minimalMemoryRequired, true)
+			runDuration, err := scaleCPToOOMKilled(minimalMemoryRequired, true)
 
 			if err == nil {
 				Expect(err).ToNot(HaveOccurred())

@@ -105,7 +105,7 @@ func configureReachableBackends(formatters k8s.Formatters, svc apis.Service, tem
 		refs.Refs = append(refs.Refs, &controllers.ReachableBackendRef{
 			Kind:      string(v1alpha1.MeshService),
 			Name:      pointer.To(formatters.Name(v)),
-			Namespace: &template.ObjectMeta.Namespace,
+			Namespace: &template.Namespace,
 		})
 	}
 
