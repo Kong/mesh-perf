@@ -363,7 +363,7 @@ spec:
 			}()
 		}
 
-		scaleCPToOOMKilled := func(memory int, addGoMemLimit bool) (error, time.Duration) {
+		scaleCPToOOMKilled := func(memory int, addGoMemLimit bool) (time.Duration, error) {
 			GinkgoHelper()
 
 			By("Scale up the CP using full resources")
@@ -393,7 +393,7 @@ spec:
 
 			printUnavailablePods(cluster.GetTesting(), cluster.GetKubectlOptions(TestNamespace), metav1.ListOptions{})
 			runDuration := time.Since(timeStartPatch)
-			return err, runDuration
+			return runDuration, err
 		}
 
 		BeforeAll(func() {
