@@ -204,13 +204,12 @@ spec:
 					30,
 					10*time.Second,
 					func() (string, error) {
-						logs, err := cluster.GetKumaCPLogs()
-						if err != nil {
-							return "", err
-						}
+						logs := cluster.GetKumaCPLogs()
 
-						if strings.Contains(logs, fmt.Sprintf("successfully acquired lease %s/cp-leader-lease", Config.KumaNamespace)) {
-							return "adjusting control plane resource limits completed", nil
+						for _, log := range logs {
+							if strings.Contains(log, fmt.Sprintf("successfully acquired lease %s/cp-leader-lease", Config.KumaNamespace)) {
+								return "adjusting control plane resource limits completed", nil
+							}
 						}
 
 						return "", errors.New("control plane is not ready - leader is missing")
