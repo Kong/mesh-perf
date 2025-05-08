@@ -211,7 +211,6 @@ spec:
 								return "adjusting control plane resource limits completed", nil
 							}
 						}
-						
 
 						return "", errors.New("control plane is not ready - leader is missing")
 					},
