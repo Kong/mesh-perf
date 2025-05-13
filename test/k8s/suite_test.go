@@ -24,7 +24,17 @@ import (
 )
 
 func TestE2E(t *testing.T) {
-	test.RunE2ESpecs(t, "E2E Kubernetes Suite")
+	test.RunE2ESpecs(t, "E2E Kubernetes Suite", func(config *E2eConfig) {
+		config.HelmChartName = "kong-mesh"
+		config.HelmRepoUrl = "https://kong.github.io/kong-mesh-charts"
+		config.HelmChartPath = "kong-mesh/kong-mesh"
+		config.HelmSubChartPrefix = "kuma."
+		config.KumaImageRegistry = "kong"
+		config.KumaNamespace = "kong-mesh-system"
+		config.KumaServiceName = "kong-mesh-control-plane"
+		config.KumaGlobalZoneSyncServiceName = "kong-mesh-global-zone-sync"
+		config.DefaultClusterStartupRetries = 60
+	})
 }
 
 const obsNamespace = "monitoring"
