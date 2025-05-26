@@ -13,7 +13,7 @@ permissions: {}
 
 jobs:
   lifecycle:
-    uses: kumahq/.github/.github/workflows/wfc_lifecycle.yml@417fa247cd071cad8628a63bf54ca54fd8baf96d
+    uses: kumahq/.github/.github/workflows/wfc_lifecycle.yml@002d927da1e229e0a0e0f1355d99d7d805a0278e
     permissions:
       actions: read
       contents: write
