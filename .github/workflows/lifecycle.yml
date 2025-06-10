@@ -14,6 +14,7 @@ permissions: {}
 jobs:
   lifecycle:
     uses: kumahq/.github/.github/workflows/wfc_lifecycle.yml@733fe4d11a952d80bd5065f108e694dbcc9bfcec
+    secrets: inherit
     permissions:
       actions: read
       contents: write
