@@ -1,13 +1,13 @@
 module github.com/kong/mesh-perf
 
-go 1.24.2
+go 1.24.5
 
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.37.1
 	github.com/ghodss/yaml v1.0.0
 	github.com/gruntwork-io/terratest v0.48.2
 	github.com/kennygrant/sanitize v1.2.4
-	github.com/kumahq/kuma v0.0.0-20250508044526-0865408d5f16
+	github.com/kumahq/kuma v0.0.0-20250714102727-d00874c432f0
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
 	github.com/prometheus/client_golang v1.22.0
