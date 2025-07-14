@@ -24,7 +24,7 @@ import (
 )
 
 func TestE2E(t *testing.T) {
-	test.RunE2ESpecs(t, "E2E Kubernetes Suite")
+	test.RunE2ESpecs(t, "E2E Kubernetes Suite", framework.Customize)
 }
 
 const obsNamespace = "monitoring"
