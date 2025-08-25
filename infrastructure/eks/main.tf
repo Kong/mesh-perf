@@ -100,7 +100,7 @@ module "eks" {
   cluster_addons = {
     aws-ebs-csi-driver = {
       most_recent              = true
-      service_account_role_arn = module.ebs_csi_irsa_role.iam_role_arn
+      service_account_role_arn = module.ebs_csi_irsa_role.arn
       configuration_values = jsonencode({
         sidecars : {
           snapshotter : {
@@ -129,7 +129,7 @@ module "ecr" {
   repository_name         = each.key
   repository_force_delete = "true"
 
-  repository_read_write_access_arns = [module.ebs_csi_irsa_role.iam_role_arn]
+  repository_read_write_access_arns = [module.ebs_csi_irsa_role.arn]
 
   repository_lifecycle_policy = jsonencode({
     rules = [
@@ -152,7 +152,7 @@ module "ecr" {
 module "ebs_csi_irsa_role" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts"
 
-  role_name             = "ebs-csi-${var.cluster_name}"
+  name             = "ebs-csi-${var.cluster_name}"
   attach_ebs_csi_policy = true
 
   oidc_providers = {
