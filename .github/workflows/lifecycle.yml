@@ -13,7 +13,7 @@ permissions: {}
 
 jobs:
   lifecycle:
-    uses: kumahq/.github/.github/workflows/wfc_lifecycle.yml@a66f0bd5c56f1bc81818b8679f2cce9dd9cecbfd
+    uses: kumahq/.github/.github/workflows/wfc_lifecycle.yml@75f72db331df298cdb92be152a3eccce93350a67
     secrets:
       app_id: ${{ vars.KONG_MESH_APP_ID }}
       private_key: ${{ secrets.KONG_MESH_APP_PRIVATE_KEY }}
