@@ -29,7 +29,7 @@ module "vpc" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "21.1.3"
+  version = "20.37.0"
 
   cluster_name    = var.cluster_name
   cluster_version = var.cluster_version
@@ -151,6 +151,7 @@ module "ecr" {
 
 module "ebs_csi_irsa_role" {
   source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "5.60.0"
 
   role_name             = "ebs-csi-${var.cluster_name}"
   attach_ebs_csi_policy = true
@@ -192,7 +193,7 @@ resource "helm_release" "metrics_server" {
 
   name       = "metrics-server"
   chart      = "metrics-server"
-  version    = "3.13.0"
+  version    = "3.12.2"
   repository = "https://kubernetes-sigs.github.io/metrics-server"
   namespace  = "kube-system"
   wait       = false
