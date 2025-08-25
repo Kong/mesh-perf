@@ -123,7 +123,7 @@ module "eks" {
 
 module "ecr" {
   source   = "terraform-aws-modules/ecr/aws"
-  version  = "2.4.0"
+  version  = "3.0.1"
   for_each = toset(["kuma-dp", "fake-service"])
 
   repository_name         = each.key
