@@ -31,17 +31,17 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "21.1.3"
 
-  cluster_name    = var.cluster_name
-  cluster_version = var.cluster_version
+  name    = var.cluster_name
+  kubernetes_version = var.cluster_version
 
   vpc_id                         = module.vpc.vpc_id
   subnet_ids                     = module.vpc.private_subnets
-  cluster_endpoint_public_access = true
+  endpoint_public_access         = true
 
   # Enable the CloudWatch log group and detailed EKS logs (API, audit, etc.) only when `local.debug` is true.
   # This helps with troubleshooting and deeper visibility while avoiding unnecessary overhead otherwise.
   create_cloudwatch_log_group = local.debug
-  cluster_enabled_log_types   = local.debug ? [
+  enabled_log_types   = local.debug ? [
     "api",
     "audit",
     "authenticator",
@@ -70,13 +70,10 @@ module "eks" {
     }
   } : {}
 
-  eks_managed_node_group_defaults = {
-    ami_type = "AL2_ARM_64"
-  }
-
   eks_managed_node_groups = {
     default = {
       name = "default"
+      ami_type = "AL2_ARM_64"
 
       instance_types = [var.nodes_type]
 
@@ -97,7 +94,7 @@ module "eks" {
     }
   }
 
-  cluster_addons = {
+  addons = {
     aws-ebs-csi-driver = {
       most_recent              = true
       service_account_role_arn = module.ebs_csi_irsa_role.arn
