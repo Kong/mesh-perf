@@ -7,7 +7,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/gruntwork-io/terratest v0.50.0
 	github.com/kennygrant/sanitize v1.2.4
-	github.com/kumahq/kuma v0.0.0-20250714102727-d00874c432f0
+	github.com/kumahq/kuma a6808f2e7d9d
 	github.com/onsi/ginkgo/v2 v2.25.3
 	github.com/onsi/gomega v1.38.2
 	github.com/prometheus/client_golang v1.23.2
