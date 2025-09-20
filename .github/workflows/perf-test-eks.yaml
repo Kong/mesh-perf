@@ -26,7 +26,7 @@ permissions:
 
 jobs:
   perf-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       PERF_TEST_NUM_SERVICES: ${{ inputs.num_services || 1000 }}
       PERF_TEST_INSTANCES_PER_SERVICE: ${{ inputs.instances_per_service || 2}}
