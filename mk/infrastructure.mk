@@ -74,6 +74,9 @@ terraform/init/%: CHDIR = $*
 terraform/init/%:
 	$(TF_CMD) init$(if $(UPGRADE), -upgrade,)$(if $(RECONFIGURE), -reconfigure,)
 
+.PHONY: terraform/init
+terraform/init: $(foreach component,$(notdir $(wildcard $(TOP)/infrastructure/*)),terraform/init/$(component))
+
 # Generic rule to apply or destroy Terraform configurations.
 # - Uses $* to dynamically extract the directory path from the target.
 # - Extracts "apply" or "destroy" from the target name via $(word 2,$(subst /,,$@)).
