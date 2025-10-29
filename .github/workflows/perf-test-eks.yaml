@@ -42,12 +42,9 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/mesh-perf-ci
           role-duration-seconds: 7200
           aws-region: us-west-1
-      - name: Setup go
-        uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
-        with:
-          go-version-file: go.mod
-      - name: make dev/tools
-        run: make dev/tools
+      - uses: jdx/mise-action@5ac50f778e26fac95da98d50503682459e86d566 # v3.2.0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - name: Get version
         id: version
         run: |

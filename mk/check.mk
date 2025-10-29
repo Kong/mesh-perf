@@ -1,10 +1,10 @@
 .PHONY: tidy
 tidy:
-	go mod tidy
+	$(GO) mod tidy
 
 .PHONT: fmt
 fmt:
-	go fmt ./...
+	$(GO) fmt ./...
 
 .PHONY: check
 check: clean tidy fmt generate

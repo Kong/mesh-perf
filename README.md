@@ -6,7 +6,7 @@ Performance tests of Kong Mesh.
 
 1. Install dependencies
 ```sh
-make dev/tools
+mise install
 ```
 
 2. Create local cluster
