@@ -3,5 +3,15 @@
   "extends": [
     "Kong/public-shared-renovate:backend#1.12.0",
     "Kong/public-shared-renovate//modules/kuma/go-control-plane#1.12.0"
+  ],
+  "packageRules": [
+    {
+      "description": [
+        " Group dependency bumps from selected GitHub sources into a single PR across managers",
+        " (e.g., mise and gomod) to avoid separate PRs per manager"
+      ],
+      "matchSourceUrls": ["https://github.com/{onsi/ginkgo,golangci/golangci-lint,helm/helm}"],
+      "groupName": "{{{replace 'https://github\\.com/[a-z-]+/' '' sourceUrl}}}"
+    }
   ]
 }
