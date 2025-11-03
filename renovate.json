@@ -1,7 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "Kong/public-shared-renovate:backend#1.12.0",
-    "Kong/public-shared-renovate//modules/kuma/go-control-plane#1.12.0"
+    "Kong/public-shared-renovate",
+    "Kong/public-shared-renovate//scoped/kuma/go-control-plane",
+    "Kong/public-shared-renovate//scoped/kuma/mise-tool-grouping"
   ]
 }
