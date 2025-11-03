@@ -5,5 +5,5 @@ experimental = true # To enable installation of Go tools from source with mise.
 ginkgo = "2.26.0"
 go = "1.25.3"
 terraform = "1.5.7"
-"go:github.com/google/go-jsonnet/cmd/jsonnet" = "v0.20.0"
+"go:github.com/google/go-jsonnet/cmd/jsonnet" = "v0.21.0"
 "go:github.com/jsonnet-bundler/jsonnet-bundler/cmd/jb" = "v0.6.0"
