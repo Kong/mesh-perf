@@ -3,7 +3,7 @@ module github.com/kong/mesh-perf
 go 1.24.5
 
 require (
-	github.com/DataDog/datadog-api-client-go/v2 v2.47.0
+	github.com/DataDog/datadog-api-client-go/v2 v2.48.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gruntwork-io/terratest v0.51.0
 	github.com/kennygrant/sanitize v1.2.4
