@@ -14,7 +14,9 @@ eks_TF_VARS += -var="ci=$(or $(CI),false)"
 eks_TF_VARS += -var="debug=$(DEBUG)"
 eks_TF_VARS += -var="region=$(AWS_REGION)"
 eks_TF_VARS += -var='availability_zones=["$(AWS_REGION)b","$(AWS_REGION)c"]'
+ifneq ($(ENV),local)
 eks_TF_VARS += -var="nodes_number=$(shell $(E2E_TF_VARS) go run tools/eksformula/main.go)"
+endif
 
 # MAKE_INFRA_TARGETS macro
 # 1. Stores the relative path to "$(TOP)/infrastructure/$(1)" in "$(1)_DIR".
@@ -26,7 +28,7 @@ eks_TF_VARS += -var="nodes_number=$(shell $(E2E_TF_VARS) go run tools/eksformula
 #    - Also depend on "ecr/push" if $(1) is "eks".
 # 4. Defines "infra/destroy/$(1)" to invoke "terraform/destroy/..." for the component.
 define MAKE_INFRA_TARGETS
-$(1)_DIR := $(shell realpath --relative-to="$(TOP)" "$(TOP)/infrastructure/$(1)")
+$(1)_DIR := infrastructure/$(1)
 
 # Apply/destroy targets use $(1)_TF_VARS if defined.
 terraform/apply/$$($(1)_DIR) terraform/destroy/$$($(1)_DIR): VARS = $($(1)_TF_VARS)
