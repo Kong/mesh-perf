@@ -77,7 +77,7 @@ terraform/init/%:
 	$(TF_CMD) init$(if $(UPGRADE), -upgrade,)$(if $(RECONFIGURE), -reconfigure,)
 
 .PHONY: terraform/init
-terraform/init: $(foreach component,$(notdir $(wildcard $(TOP)/infrastructure/*)),terraform/init/$(component))
+terraform/init: $(foreach component,$(notdir $(wildcard $(TOP)/infrastructure/*)),terraform/init/infrastructure/$(component))
 
 # Generic rule to apply or destroy Terraform configurations.
 # - Uses $* to dynamically extract the directory path from the target.
