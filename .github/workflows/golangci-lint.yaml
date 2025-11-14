@@ -13,7 +13,7 @@ on: # yamllint disable-line rule:truthy
 
 env:
   # renovate: datasource=github-tags depName=golangci-lint packageName=golangci/golangci-lint versioning=semver
-  GOLANGCI_LINT_VERSION: v2.6.0
+  GOLANGCI_LINT_VERSION: v2.1.6
 
 jobs:
   golangci-lint:
