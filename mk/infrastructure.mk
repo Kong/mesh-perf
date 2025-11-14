@@ -30,8 +30,8 @@ endif
 define MAKE_INFRA_TARGETS
 $(1)_DIR := infrastructure/$(1)
 
-# Apply/destroy targets use $(1)_TF_VARS if defined.
-terraform/apply/$$($(1)_DIR) terraform/destroy/$$($(1)_DIR): VARS = $($(1)_TF_VARS)
+# Apply/destroy/plan/validate targets use $(1)_TF_VARS if defined.
+terraform/apply/$$($(1)_DIR) terraform/destroy/$$($(1)_DIR) terraform/plan/$$($(1)_DIR) terraform/validate/$$($(1)_DIR): VARS = $($(1)_TF_VARS)
 
 .PHONY: infra/create/$(1) infra/destroy/$(1)
 
