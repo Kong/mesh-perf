@@ -1,6 +1,9 @@
 ---
 name: GolangCI Lint
 
+permissions:
+  contents: read
+
 on: # yamllint disable-line rule:truthy
   # Run for all pull requests so the workflow/check is always created and
   # can be configured as a required status check. The dorny/paths-filter job
