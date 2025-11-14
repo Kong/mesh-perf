@@ -31,17 +31,17 @@ module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "21.8.0"
 
-  cluster_name    = var.cluster_name
-  cluster_version = var.cluster_version
+  name               = var.cluster_name
+  kubernetes_version = var.cluster_version
 
-  vpc_id                         = module.vpc.vpc_id
-  subnet_ids                     = module.vpc.private_subnets
-  cluster_endpoint_public_access = true
+  vpc_id                   = module.vpc.vpc_id
+  subnet_ids               = module.vpc.private_subnets
+  endpoint_public_access   = true
 
   # Enable the CloudWatch log group and detailed EKS logs (API, audit, etc.) only when `local.debug` is true.
   # This helps with troubleshooting and deeper visibility while avoiding unnecessary overhead otherwise.
   create_cloudwatch_log_group = local.debug
-  cluster_enabled_log_types   = local.debug ? [
+  enabled_log_types           = local.debug ? [
     "api",
     "audit",
     "authenticator",
@@ -52,7 +52,7 @@ module "eks" {
   authentication_mode                      = "API_AND_CONFIG_MAP"
   enable_cluster_creator_admin_permissions = true
 
-  # On local environments, the user credentials are already configured automatically, so we don’t need to set them again.
+  # On local environments, the user credentials are already configured automatically, so we don't need to set them again.
   # This configuration is only necessary on CI to grant access to the cluster from our CI role/account.
   access_entries = local.ci ? {
     poweruser = {
@@ -70,14 +70,11 @@ module "eks" {
     }
   } : {}
 
-  eks_managed_node_group_defaults = {
-    ami_type = "AL2_ARM_64"
-  }
-
   eks_managed_node_groups = {
     default = {
       name = "default"
 
+      ami_type       = "AL2_ARM_64"
       instance_types = [var.nodes_type]
 
       min_size     = var.nodes_number
@@ -97,10 +94,10 @@ module "eks" {
     }
   }
 
-  cluster_addons = {
+  addons = {
     aws-ebs-csi-driver = {
       most_recent              = true
-      service_account_role_arn = module.ebs_csi_irsa_role.iam_role_arn
+      service_account_role_arn = module.ebs_csi_irsa_role.arn
       configuration_values = jsonencode({
         sidecars : {
           snapshotter : {
@@ -129,7 +126,7 @@ module "ecr" {
   repository_name         = each.key
   repository_force_delete = "true"
 
-  repository_read_write_access_arns = [module.ebs_csi_irsa_role.iam_role_arn]
+  repository_read_write_access_arns = [module.ebs_csi_irsa_role.arn]
 
   repository_lifecycle_policy = jsonencode({
     rules = [
