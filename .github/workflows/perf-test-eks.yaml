@@ -33,7 +33,7 @@ jobs:
     env:
       PERF_TEST_NUM_SERVICES: ${{ inputs.num_services || 1000 }}
       PERF_TEST_INSTANCES_PER_SERVICE: ${{ inputs.instances_per_service || 2}}
-      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      GITHUB_TOKEN: ${{ github.token }}
       ENV: eks
       INIT: true
     steps:
