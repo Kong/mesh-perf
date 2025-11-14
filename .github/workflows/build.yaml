@@ -8,9 +8,7 @@ on:
     branches:
       - main
 
-# Required for aws-actions/configure-aws-credentials to use OIDC authentication
 permissions:
-  id-token: write
   contents: read
 
 jobs:
@@ -20,20 +18,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8 # v5.1.0
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/mesh-perf-ci
-          role-duration-seconds: 7200
-          aws-region: us-west-1
       - uses: jdx/mise-action@be3be2260bc02bc3fbf94c5e2fed8b7964baf074 # v3.4.0
         env:
           GITHUB_TOKEN: ${{ github.token }}
       - name: make check
         run: make check
-      - name: make terraform/init
-        run: make terraform/init
-      - name: make terraform/validate
-        run: make terraform/validate
-      - name: make terraform/plan
-        run: make terraform/plan
