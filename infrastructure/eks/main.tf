@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {}
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "5.21.0"
+  version = "6.5.0"
 
   name = "${var.cluster_name}-vpc"
 
@@ -29,7 +29,7 @@ module "vpc" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "20.37.2"
+  version = "21.8.0"
 
   cluster_name    = var.cluster_name
   cluster_version = var.cluster_version
@@ -123,7 +123,7 @@ module "eks" {
 
 module "ecr" {
   source   = "terraform-aws-modules/ecr/aws"
-  version  = "2.4.0"
+  version  = "3.1.0"
   for_each = toset(["kuma-dp", "fake-service"])
 
   repository_name         = each.key
@@ -150,10 +150,10 @@ module "ecr" {
 }
 
 module "ebs_csi_irsa_role" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.60.0"
+  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts"
+  version = "6.2.3"
 
-  role_name             = "ebs-csi-${var.cluster_name}"
+  name                  = "ebs-csi-${var.cluster_name}"
   attach_ebs_csi_policy = true
 
   oidc_providers = {
