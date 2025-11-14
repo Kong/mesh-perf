@@ -25,6 +25,7 @@ variable "cluster_version" {
 variable "nodes_number" {
   description = "Number of worker nodes in the cluster"
   type        = number
+  default     = 1
 }
 
 variable "nodes_type" {
