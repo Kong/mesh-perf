@@ -8,6 +8,11 @@ on:
     branches:
       - main
 
+# Required for aws-actions/configure-aws-credentials to use OIDC authentication
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build:
     name: Build, check and test
