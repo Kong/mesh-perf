@@ -1,11 +1,14 @@
 name: "Perf tests on EKS"
-run-name: "Perf tests on EKS - KM ${{ inputs.mesh_version != '' && inputs.mesh_version || 'latest' }}, ${{ inputs.num_services }} services, ${{ inputs.instances_per_service }} instances per service"
+run-name: "Perf tests on EKS${{ inputs.pr_number != '' && format(' - PR #{0}', inputs.pr_number) || '' }} - KM ${{ inputs.mesh_version != '' && inputs.mesh_version || 'latest' }}, ${{ inputs.num_services || 1000 }} services, ${{ inputs.instances_per_service || 2 }} instances per service"
 
 on:
   schedule:
     - cron: "0 0 * * 1-5"
   workflow_dispatch:
     inputs:
+      pr_number:
+        description: "PR number to test (optional, uses current branch if not specified)"
+        type: string
       mesh_version:
         description: "Mesh version, if not specified, then version is the latest commit from kong/kong-mesh@master"
         type: string
@@ -36,6 +39,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Checkout PR
+        if: inputs.pr_number != ''
+        run: |
+          gh pr checkout ${{ inputs.pr_number }}
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8 # v5.1.0
         with:
