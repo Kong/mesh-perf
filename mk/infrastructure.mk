@@ -79,6 +79,24 @@ terraform/init/%:
 .PHONY: terraform/init
 terraform/init: $(foreach component,$(notdir $(wildcard $(TOP)/infrastructure/*)),terraform/init/infrastructure/$(component))
 
+# Validate Terraform configuration in the specified directory.
+.PHONY: terraform/validate/%
+terraform/validate/%: CHDIR = $*
+terraform/validate/%:
+	$(TF_CMD) validate
+
+.PHONY: terraform/validate
+terraform/validate: $(foreach component,$(notdir $(wildcard $(TOP)/infrastructure/*)),terraform/validate/infrastructure/$(component))
+
+# Plan Terraform changes in the specified directory.
+.PHONY: terraform/plan/%
+terraform/plan/%: CHDIR = $*
+terraform/plan/%:
+	$(TF_CMD) plan $(if $(VARS),$(VARS))
+
+.PHONY: terraform/plan
+terraform/plan: $(foreach component,$(notdir $(wildcard $(TOP)/infrastructure/*)),terraform/plan/infrastructure/$(component))
+
 # Generic rule to apply or destroy Terraform configurations.
 # - Uses $* to dynamically extract the directory path from the target.
 # - Extracts "apply" or "destroy" from the target name via $(word 2,$(subst /,,$@)).
