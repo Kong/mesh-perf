@@ -1,14 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "Kong/public-shared-renovate:backend",
-    "kumahq/kuma//.renovate/go-control-plane"
-  ],
-  "enabledManagers": [
-    "docker-compose",
-    "github-actions",
-    "gomod",
-    "jsonnet-bundler",
-    "terraform"
+    "Kong/public-shared-renovate",
+    "Kong/public-shared-renovate//scoped/kuma/go-control-plane",
+    "Kong/public-shared-renovate//scoped/kuma/mise-tool-grouping"
   ]
 }

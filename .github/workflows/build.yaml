@@ -21,12 +21,9 @@ jobs:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/mesh-perf-ci
           role-duration-seconds: 7200
           aws-region: us-west-1
-      - name: Setup go
-        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
-        with:
-          go-version-file: 'go.mod'
-      - name: make dev/tools
-        run: make dev/tools
+      - uses: jdx/mise-action@be3be2260bc02bc3fbf94c5e2fed8b7964baf074 # v3.4.0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
       - name: make check
         run: make check
       - name: make terraform/init

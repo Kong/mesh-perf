@@ -23,7 +23,7 @@ import (
 type PatchKind string
 
 const (
-	PortPrometheusServer           = 9090
+	PortPrometheusServer           = 80
 	NamePrometheusServer           = "prometheus-server"
 	NameGrafana                    = "grafana"
 	KindDeployment       PatchKind = "deployment"
