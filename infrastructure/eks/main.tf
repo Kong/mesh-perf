@@ -109,10 +109,10 @@ module "eks" {
           }
         }
       })
-      pod_identity_association = {
+      pod_identity_association = [{
         role_arn        = module.ebs_csi_pod_identity.iam_role_arn
         service_account = "ebs-csi-controller-sa"
-      }
+      }]
     }
 
     eks-pod-identity-agent = {
