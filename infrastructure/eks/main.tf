@@ -34,14 +34,14 @@ module "eks" {
   name               = var.cluster_name
   kubernetes_version = var.cluster_version
 
-  vpc_id                   = module.vpc.vpc_id
-  subnet_ids               = module.vpc.private_subnets
-  endpoint_public_access   = true
+  vpc_id                 = module.vpc.vpc_id
+  subnet_ids             = module.vpc.private_subnets
+  endpoint_public_access = true
 
   # Enable the CloudWatch log group and detailed EKS logs (API, audit, etc.) only when `local.debug` is true.
   # This helps with troubleshooting and deeper visibility while avoiding unnecessary overhead otherwise.
   create_cloudwatch_log_group = local.debug
-  enabled_log_types           = local.debug ? [
+  enabled_log_types = local.debug ? [
     "api",
     "audit",
     "authenticator",
@@ -96,8 +96,7 @@ module "eks" {
 
   addons = {
     aws-ebs-csi-driver = {
-      most_recent              = true
-      service_account_role_arn = module.ebs_csi_irsa_role.arn
+      most_recent = true
       configuration_values = jsonencode({
         sidecars : {
           snapshotter : {
@@ -110,6 +109,10 @@ module "eks" {
           }
         }
       })
+      pod_identity_association = {
+        role_arn        = module.ebs_csi_pod_identity.iam_role_arn
+        service_account = "ebs-csi-controller-sa"
+      }
     }
 
     eks-pod-identity-agent = {
@@ -126,7 +129,7 @@ module "ecr" {
   repository_name         = each.key
   repository_force_delete = "true"
 
-  repository_read_write_access_arns = [module.ebs_csi_irsa_role.arn]
+  repository_read_write_access_arns = [module.ebs_csi_pod_identity.iam_role_arn]
 
   repository_lifecycle_policy = jsonencode({
     rules = [
@@ -146,17 +149,22 @@ module "ecr" {
   })
 }
 
-module "ebs_csi_irsa_role" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts"
-  version = "6.2.3"
+module "ebs_csi_pod_identity" {
+  source  = "terraform-aws-modules/eks-pod-identity/aws"
+  version = "1.11.0"
 
-  name                  = "ebs-csi-${var.cluster_name}"
-  attach_ebs_csi_policy = true
+  name = "ebs-csi-${var.cluster_name}"
 
-  oidc_providers = {
+  attach_aws_ebs_csi_policy = true
+
+  association_defaults = {
+    namespace       = "kube-system"
+    service_account = "ebs-csi-controller-sa"
+  }
+
+  associations = {
     eks = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
+      cluster_name = module.eks.cluster_name
     }
   }
 }

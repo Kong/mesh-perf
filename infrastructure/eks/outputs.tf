@@ -13,9 +13,9 @@ output "cluster_name" {
   value       = var.cluster_name
 }
 
-output "ebs_csi_irsa_role" {
-  description = "ARN of the IAM role used by the EBS CSI driver (IRSA) and to access ECR"
-  value       = module.ebs_csi_irsa_role.arn
+output "ebs_csi_pod_identity_role" {
+  description = "ARN of the IAM role used by the EBS CSI driver (Pod Identity) and to access ECR"
+  value       = module.ebs_csi_pod_identity.iam_role_arn
 }
 
 output "region" {
@@ -25,5 +25,5 @@ output "region" {
 
 output "registry" {
   description = "ECR registry for storing and retrieving container images"
-  value = format("%s.dkr.ecr.%s.amazonaws.com", values(module.ecr)[0].repository_registry_id, var.region)
+  value       = format("%s.dkr.ecr.%s.amazonaws.com", values(module.ecr)[0].repository_registry_id, var.region)
 }
