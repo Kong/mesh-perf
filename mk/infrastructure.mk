@@ -9,6 +9,10 @@ ENV ?= local
 # and, for example, install a metrics server in EKS clusters.
 DEBUG := $(or $(DEBUG),$(or $(RUNNER_DEBUG),false))
 
+# Environment variables needed for eksformula calculation
+E2E_TF_VARS += PERF_TEST_NUM_SERVICES=$${PERF_TEST_NUM_SERVICES:=70}
+E2E_TF_VARS += PERF_TEST_INSTANCES_PER_SERVICE=$${PERF_TEST_INSTANCES_PER_SERVICE:=2}
+
 # Additional Terraform variables for the EKS component
 eks_TF_VARS += -var="ci=$(or $(CI),false)"
 eks_TF_VARS += -var="debug=$(DEBUG)"
