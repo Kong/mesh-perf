@@ -13,9 +13,9 @@ output "cluster_name" {
   value       = var.cluster_name
 }
 
-output "ebs_csi_pod_identity_role" {
-  description = "ARN of the IAM role used by the EBS CSI driver (Pod Identity) and to access ECR"
-  value       = module.ebs_csi_pod_identity.iam_role_arn
+output "ebs_csi_irsa_role" {
+  description = "ARN of the IAM role used by the EBS CSI driver (IRSA) and to access ECR"
+  value       = module.ebs_csi_irsa_role.iam_role_arn
 }
 
 output "region" {

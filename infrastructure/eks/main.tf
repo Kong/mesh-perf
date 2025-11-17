@@ -96,7 +96,8 @@ module "eks" {
 
   addons = {
     aws-ebs-csi-driver = {
-      most_recent = true
+      most_recent              = true
+      service_account_role_arn = module.ebs_csi_irsa_role.iam_role_arn
       configuration_values = jsonencode({
         sidecars : {
           snapshotter : {
@@ -125,7 +126,7 @@ module "ecr" {
   repository_name         = each.key
   repository_force_delete = "true"
 
-  repository_read_write_access_arns = [module.ebs_csi_pod_identity.iam_role_arn]
+  repository_read_write_access_arns = [module.ebs_csi_irsa_role.iam_role_arn]
 
   repository_lifecycle_policy = jsonencode({
     rules = [
@@ -145,22 +146,17 @@ module "ecr" {
   })
 }
 
-module "ebs_csi_pod_identity" {
-  source  = "terraform-aws-modules/eks-pod-identity/aws"
-  version = "1.11.0"
+module "ebs_csi_irsa_role" {
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+  version = "6.2.3"
 
-  name = "ebs-csi-${var.cluster_name}"
+  role_name             = "ebs-csi-${var.cluster_name}"
+  attach_ebs_csi_policy = true
 
-  attach_aws_ebs_csi_policy = true
-
-  association_defaults = {
-    namespace       = "kube-system"
-    service_account = "ebs-csi-controller-sa"
-  }
-
-  associations = {
+  oidc_providers = {
     eks = {
-      cluster_name = module.eks.cluster_name
+      provider_arn               = module.eks.oidc_provider_arn
+      namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
     }
   }
 }
