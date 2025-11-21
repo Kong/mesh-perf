@@ -4,7 +4,6 @@ provider "docker" {}
 
 resource "docker_network" "network" {
   name            = "mesh-perf"
-  check_duplicate = "true"
   driver          = "bridge"
   options = {
     "com.docker.network.bridge.enable_ip_masquerade" = "true"
