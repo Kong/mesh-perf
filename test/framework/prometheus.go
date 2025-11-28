@@ -24,7 +24,7 @@ import (
 type PatchKind string
 
 const (
-	PortPrometheusServer           = 9090 // pod port (service exposes as 80)
+	PortPrometheusServer           = 9090                // pod port (service exposes as 80)
 	NamePrometheusServer           = "prometheus-server" // container name
 	AppPrometheus                  = "prometheus"        // app label for port forwarding
 	NameGrafana                    = "grafana"
