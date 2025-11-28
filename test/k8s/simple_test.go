@@ -274,16 +274,22 @@ spec:
 	It("should distribute certs when mTLS is enabled", func() {
 		expectedCerts := suiteNumServices * suiteNumInstances
 		// Step 1: Add ca-2 backend while keeping ca-1 enabled
-		Expect(cluster.Install(
-			YamlK8s(builders.
-				Mesh().
-				WithMeshServicesEnabled(mesh.Mesh_MeshServices_Exclusive).
-				WithBuiltinMTLSBackend("ca-1").
-				WithBuiltinMTLSBackend("ca-2").
-				WithEnabledMTLSBackend("ca-1").
-				WithoutInitialPolicies().
-				KubeYaml(),
-			))).To(Succeed())
+		Expect(cluster.Install(YamlK8s(`
+apiVersion: kuma.io/v1alpha1
+kind: Mesh
+metadata:
+  name: default
+spec:
+  meshServices:
+    mode: Exclusive
+  mtls:
+    enabledBackend: ca-1
+    backends:
+    - name: ca-1
+      type: builtin
+    - name: ca-2
+      type: builtin
+`))).To(Succeed())
 
 		// Step 2: Wait for all DPs to support ca-2
 		Eventually(func(g Gomega) {
@@ -297,16 +303,22 @@ spec:
 		}, "600s", "5s").Should(Succeed())
 
 		// Step 3: Now switch to ca-2
-		Expect(cluster.Install(
-			YamlK8s(builders.
-				Mesh().
-				WithMeshServicesEnabled(mesh.Mesh_MeshServices_Exclusive).
-				WithBuiltinMTLSBackend("ca-1").
-				WithBuiltinMTLSBackend("ca-2").
-				WithEnabledMTLSBackend("ca-2").
-				WithoutInitialPolicies().
-				KubeYaml(),
-			))).To(Succeed())
+		Expect(cluster.Install(YamlK8s(`
+apiVersion: kuma.io/v1alpha1
+kind: Mesh
+metadata:
+  name: default
+spec:
+  meshServices:
+    mode: Exclusive
+  mtls:
+    enabledBackend: ca-2
+    backends:
+    - name: ca-1
+      type: builtin
+    - name: ca-2
+      type: builtin
+`))).To(Succeed())
 
 		propagationStart := time.Now()
 		Eventually(func(g Gomega) {
