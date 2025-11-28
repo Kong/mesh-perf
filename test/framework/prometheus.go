@@ -24,8 +24,9 @@ import (
 type PatchKind string
 
 const (
-	PortPrometheusServer           = 80
-	NamePrometheusServer           = "prometheus-server"
+	PortPrometheusServer           = 9090 // pod port (service exposes as 80)
+	NamePrometheusServer           = "prometheus-server" // container name
+	AppPrometheus                  = "prometheus"        // app label for port forwarding
 	NameGrafana                    = "grafana"
 	KindDeployment       PatchKind = "deployment"
 	KindService          PatchKind = "service"
@@ -164,7 +165,7 @@ type PromClient struct {
 }
 
 func NewPromClient(cluster *framework.K8sCluster, ns string) (*PromClient, error) {
-	endpoint, err := GetApiServerEndpoint(cluster, ns, NamePrometheusServer, PortPrometheusServer)
+	endpoint, err := GetPrometheusServerEndpoint(cluster, ns, PortPrometheusServer)
 	if err != nil {
 		return nil, err
 	}
@@ -195,6 +196,49 @@ func (p *PromClient) QueryIntValue(ctx context.Context, query string) (int, erro
 	}
 
 	return int(vector[0].Value), nil
+}
+
+// GetPrometheusServerEndpoint creates port forward to prometheus-server pod using component=server label
+func GetPrometheusServerEndpoint(cluster *framework.K8sCluster, ns string, port int) (string, error) {
+	// Find prometheus-server pod using component=server label
+	pods, err := k8s.ListPodsE(
+		cluster.GetTesting(),
+		cluster.GetKubectlOptions(ns),
+		metav1.ListOptions{
+			LabelSelector: "component=server",
+		},
+	)
+	if err != nil {
+		return "", err
+	}
+	if len(pods) != 1 {
+		return "", fmt.Errorf("expected 1 prometheus-server pod, got %d", len(pods))
+	}
+	podName := pods[0].Name
+
+	spec := portforward.Spec{
+		AppName:    podName,
+		Namespace:  ns,
+		RemotePort: port,
+	}
+
+	if cluster.GetPortForward(spec).Endpoint != "" {
+		cluster.ClosePortForwards(spec)
+	}
+
+	return retry.DoWithRetryE(
+		cluster.GetTesting(),
+		"create port forward for prometheus-server",
+		60,
+		10*time.Second,
+		func() (string, error) {
+			fwd, err := cluster.PortForward(k8s.ResourceTypePod, podName, ns, port)
+			if err != nil {
+				return "", err
+			}
+			return fwd.Endpoint, nil
+		},
+	)
 }
 
 func GetApiServerEndpoint(cluster *framework.K8sCluster, ns, app string, port int) (string, error) {
