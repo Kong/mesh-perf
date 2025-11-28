@@ -25,5 +25,5 @@ output "region" {
 
 output "registry" {
   description = "ECR registry for storing and retrieving container images"
-  value = format("%s.dkr.ecr.%s.amazonaws.com", values(module.ecr)[0].repository_registry_id, var.region)
+  value       = format("%s.dkr.ecr.%s.amazonaws.com", values(module.ecr)[0].repository_registry_id, var.region)
 }
