@@ -2,7 +2,7 @@
 tidy:
 	$(GO) mod tidy
 
-.PHONT: fmt
+.PHONY: fmt
 fmt:
 	$(GO) fmt ./...
 
