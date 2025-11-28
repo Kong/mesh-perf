@@ -238,7 +238,9 @@ spec:
 			)[0]
 			tnl := k8s.NewTunnel(cluster.GetKubectlOptions(TestNamespace), k8s.ResourceTypePod, pod.Name, 0, 9901)
 			Expect(tnl.ForwardPortE(cluster.GetTesting())).To(Succeed())
-			admin = tunnel.NewK8sEnvoyAdminTunnel(cluster.GetTesting(), tnl.Endpoint())
+			var err error
+			admin, err = tunnel.NewK8sEnvoyAdminTunnel(cluster.GetTesting(), tnl.Endpoint())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		scale := func(replicas int) {
