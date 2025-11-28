@@ -8,7 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	prometheus_push "github.com/prometheus/client_golang/prometheus/push"
 
-	"github.com/kumahq/kuma/test/framework"
+	"github.com/kumahq/kuma/v2/test/framework"
 )
 
 const pushGatewayApp = "prometheus-pushgateway"

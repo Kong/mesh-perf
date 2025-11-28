@@ -17,7 +17,8 @@ import (
 	"github.com/prometheus/common/model"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kumahq/kuma/test/framework"
+	"github.com/kumahq/kuma/v2/test/framework"
+	"github.com/kumahq/kuma/v2/test/framework/portforward"
 )
 
 type PatchKind string
@@ -200,11 +201,17 @@ func GetApiServerEndpoint(cluster *framework.K8sCluster, ns, app string, port in
 	// The API Server or other control plane components may scale up after the cluster starts,
 	// invalidating an existing port forward. To ensure a valid connection, always close any
 	// existing port forward before creating a new one.
-	if cluster.GetPortForward(app).ApiServerEndpoint != "" {
-		cluster.ClosePortForward(app)
+	spec := portforward.Spec{
+		AppName:    app,
+		Namespace:  ns,
+		RemotePort: port,
 	}
 
-	if err := cluster.PortForwardService(app, ns, port); err != nil {
+	if cluster.GetPortForward(spec).Endpoint != "" {
+		cluster.ClosePortForwards(spec)
+	}
+
+	if _, err := cluster.PortForwardApp(spec); err != nil {
 		return "", err
 	}
 
@@ -214,11 +221,11 @@ func GetApiServerEndpoint(cluster *framework.K8sCluster, ns, app string, port in
 		60,
 		10*time.Second,
 		func() (string, error) {
-			if err := cluster.PortForwardService(app, ns, port); err != nil {
+			if _, err := cluster.PortForwardApp(spec); err != nil {
 				return "", err
 			}
 
-			return cluster.GetPortForward(app).ApiServerEndpoint, nil
+			return cluster.GetPortForward(spec).Endpoint, nil
 		},
 	)
 }

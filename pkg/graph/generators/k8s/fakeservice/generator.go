@@ -10,10 +10,10 @@ import (
 	"github.com/kong/mesh-perf/pkg/graph/apis"
 	"github.com/kong/mesh-perf/pkg/graph/generators/k8s"
 
-	"github.com/kumahq/kuma/api/common/v1alpha1"
-	"github.com/kumahq/kuma/pkg/plugins/runtime/k8s/controllers"
-	"github.com/kumahq/kuma/pkg/plugins/runtime/k8s/metadata"
-	"github.com/kumahq/kuma/pkg/util/pointer"
+	"github.com/kumahq/kuma/v2/api/common/v1alpha1"
+	"github.com/kumahq/kuma/v2/pkg/plugins/runtime/k8s/controllers"
+	"github.com/kumahq/kuma/v2/pkg/plugins/runtime/k8s/metadata"
+	"github.com/kumahq/kuma/v2/pkg/util/pointer"
 )
 
 var Formatters = k8s.SimpleFormatters("fake-service")
