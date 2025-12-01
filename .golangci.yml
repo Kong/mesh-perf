@@ -88,6 +88,7 @@ formatters:
         - default
         - prefix(github.com/kumahq/kuma/v2)
         - prefix(github.com/kong/mink-charts)
+        - prefix(github.com/kong/mesh-perf)
       custom-order: true
   exclusions:
     generated: lax
