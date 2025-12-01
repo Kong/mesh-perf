@@ -13,12 +13,17 @@ terraform {
 
     helm = {
       source  = "hashicorp/helm"
-      version = "2.17.0"
+      version = "3.1.1"
     }
 
     kubernetes = {
       source  = "hashicorp/kubernetes"
       version = "2.38.0"
+    }
+
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.0"
     }
   }
 
@@ -30,10 +35,10 @@ provider "aws" {
 }
 
 provider "helm" {
-  kubernetes {
+  kubernetes = {
     host                   = module.eks.cluster_endpoint
     cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-    exec {
+    exec = {
       api_version = "client.authentication.k8s.io/v1beta1"
       args        = ["eks", "get-token", "--cluster-name", var.cluster_name]
       command     = "aws"

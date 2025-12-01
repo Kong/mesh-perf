@@ -2,12 +2,18 @@
 tidy:
 	$(GO) mod tidy
 
-.PHONT: fmt
+.PHONY: fmt
 fmt:
 	$(GO) fmt ./...
 
+.PHONY: lint
+lint:
+ifneq ($(CI),true)
+	$(GOLANGCI_LINT) run --fix=false --verbose
+endif
+
 .PHONY: check
-check: clean tidy fmt generate
+check: clean tidy fmt generate lint
 	# fail if Git working tree is dirty or there are untracked files
 	git diff --quiet || \
 	git ls-files --other --directory --exclude-standard --no-empty-directory | wc -l | read UNTRACKED_FILES; if [ "$$UNTRACKED_FILES" != "0" ]; then false; fi || \
@@ -19,3 +25,15 @@ check: clean tidy fmt generate
 		git ls-files --other --directory --exclude-standard --no-empty-directory && \
 		false \
 	)
+
+# -------------------------------------------------------------------
+# Terraform Linting
+# -------------------------------------------------------------------
+
+.PHONY: lint/terraform/%
+lint/terraform/%:
+	$(TFLINT) --chdir=$* --init
+	$(TFLINT) --chdir=$*
+
+.PHONY: lint/terraform
+lint/terraform: $(foreach component,$(notdir $(wildcard $(TOP)/infrastructure/*)),lint/terraform/infrastructure/$(component))

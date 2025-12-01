@@ -30,8 +30,8 @@ endif
 define MAKE_INFRA_TARGETS
 $(1)_DIR := infrastructure/$(1)
 
-# Apply/destroy targets use $(1)_TF_VARS if defined.
-terraform/apply/$$($(1)_DIR) terraform/destroy/$$($(1)_DIR): VARS = $($(1)_TF_VARS)
+# Apply/destroy/plan/validate targets use $(1)_TF_VARS if defined.
+terraform/apply/$$($(1)_DIR) terraform/destroy/$$($(1)_DIR) terraform/plan/$$($(1)_DIR) terraform/validate/$$($(1)_DIR): VARS = $($(1)_TF_VARS)
 
 .PHONY: infra/create/$(1) infra/destroy/$(1)
 
@@ -75,6 +75,27 @@ TF_CMD = $(TERRAFORM) -chdir=$(or $(CHDIR),$($(ENV)_DIR))
 terraform/init/%: CHDIR = $*
 terraform/init/%:
 	$(TF_CMD) init$(if $(UPGRADE), -upgrade,)$(if $(RECONFIGURE), -reconfigure,)
+
+.PHONY: terraform/init
+terraform/init: $(foreach component,$(notdir $(wildcard $(TOP)/infrastructure/*)),terraform/init/infrastructure/$(component))
+
+# Validate Terraform configuration in the specified directory.
+.PHONY: terraform/validate/%
+terraform/validate/%: CHDIR = $*
+terraform/validate/%:
+	$(TF_CMD) validate
+
+.PHONY: terraform/validate
+terraform/validate: $(foreach component,$(notdir $(wildcard $(TOP)/infrastructure/*)),terraform/validate/infrastructure/$(component))
+
+# Plan Terraform changes in the specified directory.
+.PHONY: terraform/plan/%
+terraform/plan/%: CHDIR = $*
+terraform/plan/%:
+	$(TF_CMD) plan $(if $(VARS),$(VARS))
+
+.PHONY: terraform/plan
+terraform/plan: $(foreach component,$(notdir $(wildcard $(TOP)/infrastructure/*)),terraform/plan/infrastructure/$(component))
 
 # Generic rule to apply or destroy Terraform configurations.
 # - Uses $* to dynamically extract the directory path from the target.

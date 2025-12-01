@@ -1,0 +1,67 @@
+---
+name: Terraform
+
+on: # yamllint disable-line rule:truthy
+  # Run for all pull requests so the workflow/check is always created and
+  # can be configured as a required status check. The dorny/paths-filter job
+  # will decide whether to actually run terraform checks.
+  pull_request: {}
+  merge_group:
+    types: [checks_requested]
+  push:
+    branches: [main]
+
+# Required for aws-actions/configure-aws-credentials to use OIDC authentication
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform:
+    name: Run terraform checks if Terraform files changed
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          fetch-depth: 0
+      - name: Detect Terraform-related changes
+        id: filter
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        with:
+          # Prefer the PR base sha, merge_group base sha, then event.before (push), then the ref as a fallback
+          base: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before || github.ref }}
+          filters: |
+            terraform-relevant:
+              - '**/*.tf'
+              - '**/*.tfvars'
+              - '**/.terraform.lock.hcl'
+              - 'infrastructure/**'
+              - '.github/workflows/terraform.yaml'
+      - name: Configure AWS Credentials
+        if: steps.filter.outputs.terraform-relevant == 'true'
+        uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8 # v5.1.0
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/mesh-perf-ci
+          role-duration-seconds: 7200
+          aws-region: us-west-1
+      - name: Setup mise
+        if: steps.filter.outputs.terraform-relevant == 'true'
+        uses: jdx/mise-action@9dc7d5dd454262207dea3ab5a06a3df6afc8ff26 # v3.4.1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: make terraform/init
+        if: steps.filter.outputs.terraform-relevant == 'true'
+        run: make terraform/init
+      - name: make lint/terraform
+        if: steps.filter.outputs.terraform-relevant == 'true'
+        run: make lint/terraform
+      - name: make terraform/validate
+        if: steps.filter.outputs.terraform-relevant == 'true'
+        run: make terraform/validate
+      - name: make terraform/plan
+        if: steps.filter.outputs.terraform-relevant == 'true'
+        run: make terraform/plan
+      - name: terraform summary
+        run: |
+          echo "Done"

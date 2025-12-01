@@ -8,6 +8,8 @@ MISE := $(shell which mise)
 
 GINKGO=$(shell $(MISE) which ginkgo)
 GO=$(shell $(MISE) which go)
+GOLANGCI_LINT=$(shell $(MISE) which golangci-lint)
 JSONNET=$(shell $(MISE) which jsonnet)
 JSONNET_BUNDLER=$(shell $(MISE) which jb)
 TERRAFORM=$(shell $(MISE) which terraform)
+TFLINT=$(shell $(MISE) which tflint)

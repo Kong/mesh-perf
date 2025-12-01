@@ -11,20 +11,23 @@ import (
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
 	"github.com/gruntwork-io/terratest/modules/retry"
-	"github.com/kong/mesh-perf/test/framework/silent_kubectl"
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/kumahq/kuma/test/framework"
+	"github.com/kumahq/kuma/v2/test/framework"
+	"github.com/kumahq/kuma/v2/test/framework/portforward"
+
+	"github.com/kong/mesh-perf/test/framework/silent_kubectl"
 )
 
 type PatchKind string
 
 const (
-	PortPrometheusServer           = 80
-	NamePrometheusServer           = "prometheus-server"
+	PortPrometheusServer           = 9090                // pod port (service exposes as 80)
+	NamePrometheusServer           = "prometheus-server" // container name
+	AppPrometheus                  = "prometheus"        // app label for port forwarding
 	NameGrafana                    = "grafana"
 	KindDeployment       PatchKind = "deployment"
 	KindService          PatchKind = "service"
@@ -163,7 +166,7 @@ type PromClient struct {
 }
 
 func NewPromClient(cluster *framework.K8sCluster, ns string) (*PromClient, error) {
-	endpoint, err := GetApiServerEndpoint(cluster, ns, NamePrometheusServer, PortPrometheusServer)
+	endpoint, err := GetPrometheusServerEndpoint(cluster, ns, PortPrometheusServer)
 	if err != nil {
 		return nil, err
 	}
@@ -196,15 +199,64 @@ func (p *PromClient) QueryIntValue(ctx context.Context, query string) (int, erro
 	return int(vector[0].Value), nil
 }
 
+// GetPrometheusServerEndpoint creates port forward to prometheus-server pod using component=server label
+func GetPrometheusServerEndpoint(cluster *framework.K8sCluster, ns string, port int) (string, error) {
+	// Find prometheus-server pod using component=server label
+	pods, err := k8s.ListPodsE(
+		cluster.GetTesting(),
+		cluster.GetKubectlOptions(ns),
+		metav1.ListOptions{
+			LabelSelector: "component=server",
+		},
+	)
+	if err != nil {
+		return "", err
+	}
+	if len(pods) != 1 {
+		return "", fmt.Errorf("expected 1 prometheus-server pod, got %d", len(pods))
+	}
+	podName := pods[0].Name
+
+	spec := portforward.Spec{
+		AppName:    podName,
+		Namespace:  ns,
+		RemotePort: port,
+	}
+
+	if cluster.GetPortForward(spec).Endpoint != "" {
+		cluster.ClosePortForwards(spec)
+	}
+
+	return retry.DoWithRetryE(
+		cluster.GetTesting(),
+		"create port forward for prometheus-server",
+		60,
+		10*time.Second,
+		func() (string, error) {
+			fwd, err := cluster.PortForward(k8s.ResourceTypePod, podName, ns, port)
+			if err != nil {
+				return "", err
+			}
+			return fwd.Endpoint, nil
+		},
+	)
+}
+
 func GetApiServerEndpoint(cluster *framework.K8sCluster, ns, app string, port int) (string, error) {
 	// The API Server or other control plane components may scale up after the cluster starts,
 	// invalidating an existing port forward. To ensure a valid connection, always close any
 	// existing port forward before creating a new one.
-	if cluster.GetPortForward(app).ApiServerEndpoint != "" {
-		cluster.ClosePortForward(app)
+	spec := portforward.Spec{
+		AppName:    app,
+		Namespace:  ns,
+		RemotePort: port,
 	}
 
-	if err := cluster.PortForwardService(app, ns, port); err != nil {
+	if cluster.GetPortForward(spec).Endpoint != "" {
+		cluster.ClosePortForwards(spec)
+	}
+
+	if _, err := cluster.PortForwardApp(spec); err != nil {
 		return "", err
 	}
 
@@ -214,11 +266,11 @@ func GetApiServerEndpoint(cluster *framework.K8sCluster, ns, app string, port in
 		60,
 		10*time.Second,
 		func() (string, error) {
-			if err := cluster.PortForwardService(app, ns, port); err != nil {
+			if _, err := cluster.PortForwardApp(spec); err != nil {
 				return "", err
 			}
 
-			return cluster.GetPortForward(app).ApiServerEndpoint, nil
+			return cluster.GetPortForward(spec).Endpoint, nil
 		},
 	)
 }

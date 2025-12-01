@@ -52,8 +52,9 @@ module "eks" {
   authentication_mode                      = "API_AND_CONFIG_MAP"
   enable_cluster_creator_admin_permissions = true
 
-  # On local environments, the user credentials are already configured automatically, so we don’t need to set them again.
+  # On local environments, the user credentials are already configured automatically, so we don't need to set them again.
   # This configuration is only necessary on CI to grant access to the cluster from our CI role/account.
+  # Note: mesh-perf-ci role gets access via enable_cluster_creator_admin_permissions = true
   access_entries = local.ci ? {
     poweruser = {
       principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/poweruser"
