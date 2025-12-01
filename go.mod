@@ -4,7 +4,6 @@ go 1.25.3
 
 require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.50.0
-	github.com/ghodss/yaml v1.0.0
 	github.com/gruntwork-io/terratest v0.53.0
 	github.com/kennygrant/sanitize v1.2.4
 	github.com/kumahq/kuma/v2 v2.0.0-20251121172448-1b0d689df1fc
@@ -12,7 +11,6 @@ require (
 	github.com/onsi/gomega v1.38.2
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.67.3
-	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.34.2
 	k8s.io/apimachinery v0.34.2
 	k8s.io/client-go v0.34.2
@@ -203,6 +201,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/v3 v3.5.2 // indirect
 	k8s.io/apiextensions-apiserver v0.34.1 // indirect
 	k8s.io/apiserver v0.34.1 // indirect

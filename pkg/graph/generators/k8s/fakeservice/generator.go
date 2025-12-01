@@ -7,13 +7,13 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 
-	"github.com/kong/mesh-perf/pkg/graph/apis"
-	"github.com/kong/mesh-perf/pkg/graph/generators/k8s"
-
 	"github.com/kumahq/kuma/v2/api/common/v1alpha1"
 	"github.com/kumahq/kuma/v2/pkg/plugins/runtime/k8s/controllers"
 	"github.com/kumahq/kuma/v2/pkg/plugins/runtime/k8s/metadata"
 	"github.com/kumahq/kuma/v2/pkg/util/pointer"
+
+	"github.com/kong/mesh-perf/pkg/graph/apis"
+	"github.com/kong/mesh-perf/pkg/graph/generators/k8s"
 )
 
 var Formatters = k8s.SimpleFormatters("fake-service")

@@ -115,7 +115,7 @@ var _ = BeforeSuite(func() {
 		Expect(patchObs(framework.KindService, framework.NameGrafana, framework.GrafanaServicePatch())).To(Succeed())
 	}
 
-	Expect(framework.InstallPrometheusPushgateway(cluster, obsNamespace))
+	Expect(framework.InstallPrometheusPushgateway(cluster, obsNamespace)).To(Succeed())
 })
 
 var _ = AfterSuite(func() {

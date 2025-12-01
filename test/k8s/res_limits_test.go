@@ -12,11 +12,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ghodss/yaml"
 	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/gruntwork-io/terratest/modules/retry"
 	"github.com/gruntwork-io/terratest/modules/testing"
 	"k8s.io/apimachinery/pkg/watch"
+	"sigs.k8s.io/yaml"
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
 	. "github.com/onsi/ginkgo/v2"
@@ -362,7 +362,7 @@ spec:
 			}()
 		}
 
-		scaleCPToOOMKilled := func(memory int, addGoMemLimit bool) (time.Duration, error) {
+		scaleCPToOOMKilled := func(memory int) (time.Duration, error) {
 			GinkgoHelper()
 
 			By("Scale up the CP using full resources")
@@ -507,7 +507,7 @@ spec:
 		It("should be OOM-killed without GOMEMLIMIT", func() {
 			Expect(minimalMemoryRequired).To(BeNumerically(">", 0), "load and get the minimal memory requirement should before this test")
 
-			runDuration, err := scaleCPToOOMKilled(minimalMemoryRequired, false)
+			runDuration, err := scaleCPToOOMKilled(minimalMemoryRequired)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("OOMKilled"), "control plane should crash with OOM Killed")
 			ranDuraionBeforeOOM = runDuration
@@ -516,7 +516,7 @@ spec:
 		It("should crash slower or not crash when control plane has GOMEMLIMIT", func() {
 			Expect(ranDuraionBeforeOOM).To(BeNumerically(">", 0), "control plane should crash with OOM Killed before this test")
 
-			runDuration, err := scaleCPToOOMKilled(minimalMemoryRequired, true)
+			runDuration, err := scaleCPToOOMKilled(minimalMemoryRequired)
 
 			if err == nil {
 				Expect(err).ToNot(HaveOccurred())
