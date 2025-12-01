@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {}
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "5.21.0"
+  version = "6.5.0"
 
   name = "${var.cluster_name}-vpc"
 
@@ -29,19 +29,19 @@ module "vpc" {
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "20.37.2"
+  version = "21.8.0"
 
-  cluster_name    = var.cluster_name
-  cluster_version = var.cluster_version
+  name               = var.cluster_name
+  kubernetes_version = var.cluster_version
 
-  vpc_id                         = module.vpc.vpc_id
-  subnet_ids                     = module.vpc.private_subnets
-  cluster_endpoint_public_access = true
+  vpc_id                 = module.vpc.vpc_id
+  subnet_ids             = module.vpc.private_subnets
+  endpoint_public_access = true
 
   # Enable the CloudWatch log group and detailed EKS logs (API, audit, etc.) only when `local.debug` is true.
   # This helps with troubleshooting and deeper visibility while avoiding unnecessary overhead otherwise.
   create_cloudwatch_log_group = local.debug
-  cluster_enabled_log_types   = local.debug ? [
+  enabled_log_types = local.debug ? [
     "api",
     "audit",
     "authenticator",
@@ -71,14 +71,11 @@ module "eks" {
     }
   } : {}
 
-  eks_managed_node_group_defaults = {
-    ami_type = "AL2_ARM_64"
-  }
-
   eks_managed_node_groups = {
     default = {
       name = "default"
 
+      ami_type       = "AL2_ARM_64"
       instance_types = [var.nodes_type]
 
       min_size     = var.nodes_number
@@ -98,7 +95,7 @@ module "eks" {
     }
   }
 
-  cluster_addons = {
+  addons = {
     aws-ebs-csi-driver = {
       most_recent              = true
       service_account_role_arn = module.ebs_csi_irsa_role.iam_role_arn
@@ -124,7 +121,7 @@ module "eks" {
 
 module "ecr" {
   source   = "terraform-aws-modules/ecr/aws"
-  version  = "2.4.0"
+  version  = "3.1.0"
   for_each = toset(["kuma-dp", "fake-service"])
 
   repository_name         = each.key
@@ -151,8 +148,8 @@ module "ecr" {
 }
 
 module "ebs_csi_irsa_role" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.60.0"
+  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts"
+  version = "6.2.3"
 
   role_name             = "ebs-csi-${var.cluster_name}"
   attach_ebs_csi_policy = true
