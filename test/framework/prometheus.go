@@ -11,7 +11,6 @@ import (
 
 	"github.com/gruntwork-io/terratest/modules/k8s"
 	"github.com/gruntwork-io/terratest/modules/retry"
-	"github.com/kong/mesh-perf/test/framework/silent_kubectl"
 	"github.com/prometheus/client_golang/api"
 	v1 "github.com/prometheus/client_golang/api/prometheus/v1"
 	"github.com/prometheus/common/model"
@@ -19,6 +18,8 @@ import (
 
 	"github.com/kumahq/kuma/v2/test/framework"
 	"github.com/kumahq/kuma/v2/test/framework/portforward"
+
+	"github.com/kong/mesh-perf/test/framework/silent_kubectl"
 )
 
 type PatchKind string

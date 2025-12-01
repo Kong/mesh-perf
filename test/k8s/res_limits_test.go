@@ -12,17 +12,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gruntwork-io/terratest/modules/k8s"
 	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/gruntwork-io/terratest/modules/retry"
 	"github.com/gruntwork-io/terratest/modules/testing"
-	"k8s.io/apimachinery/pkg/watch"
-	"sigs.k8s.io/yaml"
-
-	"github.com/gruntwork-io/terratest/modules/k8s"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
+	"sigs.k8s.io/yaml"
 
 	"github.com/kumahq/kuma/v2/pkg/config/core"
 	. "github.com/kumahq/kuma/v2/test/framework"

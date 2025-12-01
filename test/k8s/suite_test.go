@@ -16,11 +16,11 @@ import (
 	. "github.com/onsi/gomega"
 	k8s_strings "k8s.io/utils/strings"
 
-	"github.com/kong/mesh-perf/test/framework"
-
 	"github.com/kumahq/kuma/v2/pkg/test"
 	. "github.com/kumahq/kuma/v2/test/framework"
 	obs "github.com/kumahq/kuma/v2/test/framework/deployments/observability"
+
+	"github.com/kong/mesh-perf/test/framework"
 )
 
 func TestE2E(t *testing.T) {
