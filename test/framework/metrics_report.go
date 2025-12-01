@@ -11,11 +11,15 @@ import (
 	"github.com/kumahq/kuma/v2/test/framework"
 )
 
-const pushGatewayApp = "prometheus-pushgateway"
-const pushGatewayPort = 9091
+const (
+	pushGatewayApp  = "prometheus-pushgateway"
+	pushGatewayPort = 9091
+)
 
-var registry = prometheus.NewRegistry()
-var testStatusStarted *prometheus.GaugeVec
+var (
+	registry          = prometheus.NewRegistry()
+	testStatusStarted *prometheus.GaugeVec
+)
 
 func init() {
 	testStatusStarted = prometheus.NewGaugeVec(prometheus.GaugeOpts{

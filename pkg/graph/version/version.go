@@ -2,7 +2,9 @@ package version
 
 import "runtime/debug"
 
-var info, _ = debug.ReadBuildInfo()
-var Name = info.Main.Path
-var Version = "dev"
-var Commit = "dev"
+var (
+	info, _ = debug.ReadBuildInfo()
+	Name    = info.Main.Path
+	Version = "dev"
+	Commit  = "dev"
+)

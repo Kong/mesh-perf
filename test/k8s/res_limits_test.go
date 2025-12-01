@@ -103,12 +103,14 @@ spec:
 	})
 
 	Context("load", func() {
-		var cpu int
-		var maxMemory int
-		var minimalMemoryRequired int
-		var ranDuraionBeforeOOM time.Duration
-		var numServices = 5
-		var instancesPerService = 1
+		var (
+			cpu                   int
+			maxMemory             int
+			minimalMemoryRequired int
+			ranDuraionBeforeOOM   time.Duration
+			numServices           = 5
+			instancesPerService   = 1
+		)
 
 		adjustResource := func(miliCPU, memMega int, addGoMemLimitEnv bool, waitForComplete bool) {
 			GinkgoHelper()
@@ -539,7 +541,6 @@ func getEnvIndex(container *corev1.Container, envName string) int {
 
 func printUnavailablePods(t testing.TestingT, kubectlOptions *k8s.KubectlOptions, listOpts metav1.ListOptions) {
 	pods, err := k8s.ListPodsE(t, kubectlOptions, listOpts)
-
 	if err != nil {
 		Logf("failed to list pods: %v\n", err)
 		return

@@ -150,7 +150,7 @@ var _ = ReportAfterSuite("compile report", func(ginkgoReport Report) {
 		Expect(err).ToNot(HaveOccurred())
 
 		fileName := fmt.Sprintf("%s.json", k8s_strings.ShortenString(sanitize.Name(specReport.Description), 250))
-		Expect(os.WriteFile(path.Join(reportDir, fileName), specReportBytes, 0666)).To(Succeed())
+		Expect(os.WriteFile(path.Join(reportDir, fileName), specReportBytes, 0o666)).To(Succeed())
 	}
 })
 
