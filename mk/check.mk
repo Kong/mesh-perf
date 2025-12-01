@@ -25,3 +25,15 @@ check: clean tidy fmt generate lint
 		git ls-files --other --directory --exclude-standard --no-empty-directory && \
 		false \
 	)
+
+# -------------------------------------------------------------------
+# Terraform Linting
+# -------------------------------------------------------------------
+
+.PHONY: lint/terraform/%
+lint/terraform/%:
+	$(TFLINT) --chdir=$* --init
+	$(TFLINT) --chdir=$*
+
+.PHONY: lint/terraform
+lint/terraform: $(foreach component,$(notdir $(wildcard $(TOP)/infrastructure/*)),lint/terraform/infrastructure/$(component))
