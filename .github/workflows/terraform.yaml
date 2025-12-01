@@ -53,6 +53,9 @@ jobs:
       - name: make terraform/init
         if: steps.filter.outputs.terraform-relevant == 'true'
         run: make terraform/init
+      - name: make lint/terraform
+        if: steps.filter.outputs.terraform-relevant == 'true'
+        run: make lint/terraform
       - name: make terraform/validate
         if: steps.filter.outputs.terraform-relevant == 'true'
         run: make terraform/validate
