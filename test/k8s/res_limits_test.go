@@ -12,20 +12,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ghodss/yaml"
+	"github.com/gruntwork-io/terratest/modules/k8s"
 	"github.com/gruntwork-io/terratest/modules/logger"
 	"github.com/gruntwork-io/terratest/modules/retry"
 	"github.com/gruntwork-io/terratest/modules/testing"
-	"k8s.io/apimachinery/pkg/watch"
-
-	"github.com/gruntwork-io/terratest/modules/k8s"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
+	"sigs.k8s.io/yaml"
 
-	"github.com/kumahq/kuma/pkg/config/core"
-	. "github.com/kumahq/kuma/test/framework"
+	"github.com/kumahq/kuma/v2/pkg/config/core"
+	. "github.com/kumahq/kuma/v2/test/framework"
 
 	"github.com/kong/mesh-perf/pkg/graph/apis"
 	graph_k8s "github.com/kong/mesh-perf/pkg/graph/generators/k8s"
@@ -104,12 +103,14 @@ spec:
 	})
 
 	Context("load", func() {
-		var cpu int
-		var maxMemory int
-		var minimalMemoryRequired int
-		var ranDuraionBeforeOOM time.Duration
-		var numServices = 5
-		var instancesPerService = 1
+		var (
+			cpu                   int
+			maxMemory             int
+			minimalMemoryRequired int
+			ranDuraionBeforeOOM   time.Duration
+			numServices           = 5
+			instancesPerService   = 1
+		)
 
 		adjustResource := func(miliCPU, memMega int, addGoMemLimitEnv bool, waitForComplete bool) {
 			GinkgoHelper()
@@ -362,7 +363,7 @@ spec:
 			}()
 		}
 
-		scaleCPToOOMKilled := func(memory int, addGoMemLimit bool) (time.Duration, error) {
+		scaleCPToOOMKilled := func(memory int) (time.Duration, error) {
 			GinkgoHelper()
 
 			By("Scale up the CP using full resources")
@@ -507,7 +508,7 @@ spec:
 		It("should be OOM-killed without GOMEMLIMIT", func() {
 			Expect(minimalMemoryRequired).To(BeNumerically(">", 0), "load and get the minimal memory requirement should before this test")
 
-			runDuration, err := scaleCPToOOMKilled(minimalMemoryRequired, false)
+			runDuration, err := scaleCPToOOMKilled(minimalMemoryRequired)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("OOMKilled"), "control plane should crash with OOM Killed")
 			ranDuraionBeforeOOM = runDuration
@@ -516,7 +517,7 @@ spec:
 		It("should crash slower or not crash when control plane has GOMEMLIMIT", func() {
 			Expect(ranDuraionBeforeOOM).To(BeNumerically(">", 0), "control plane should crash with OOM Killed before this test")
 
-			runDuration, err := scaleCPToOOMKilled(minimalMemoryRequired, true)
+			runDuration, err := scaleCPToOOMKilled(minimalMemoryRequired)
 
 			if err == nil {
 				Expect(err).ToNot(HaveOccurred())
@@ -540,7 +541,6 @@ func getEnvIndex(container *corev1.Container, envName string) int {
 
 func printUnavailablePods(t testing.TestingT, kubectlOptions *k8s.KubectlOptions, listOpts metav1.ListOptions) {
 	pods, err := k8s.ListPodsE(t, kubectlOptions, listOpts)
-
 	if err != nil {
 		Logf("failed to list pods: %v\n", err)
 		return

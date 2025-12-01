@@ -37,11 +37,12 @@ func main() {
 		})
 	}
 	_, resp, err := logsApi.SubmitLog(ctx, logs)
-	if resp.StatusCode != http.StatusAccepted {
-		logger.Error(fmt.Sprintf("expected status code %d", http.StatusAccepted), "code", resp.StatusCode)
-	}
 	if err != nil {
 		logger.Error("error submitting logs", "error", err)
 		os.Exit(1)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusAccepted {
+		logger.Error(fmt.Sprintf("expected status code %d", http.StatusAccepted), "code", resp.StatusCode)
 	}
 }

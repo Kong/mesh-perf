@@ -16,11 +16,11 @@ import (
 	. "github.com/onsi/gomega"
 	k8s_strings "k8s.io/utils/strings"
 
-	"github.com/kong/mesh-perf/test/framework"
+	"github.com/kumahq/kuma/v2/pkg/test"
+	. "github.com/kumahq/kuma/v2/test/framework"
+	obs "github.com/kumahq/kuma/v2/test/framework/deployments/observability"
 
-	"github.com/kumahq/kuma/pkg/test"
-	. "github.com/kumahq/kuma/test/framework"
-	obs "github.com/kumahq/kuma/test/framework/deployments/observability"
+	"github.com/kong/mesh-perf/test/framework"
 )
 
 func TestE2E(t *testing.T) {
@@ -115,7 +115,7 @@ var _ = BeforeSuite(func() {
 		Expect(patchObs(framework.KindService, framework.NameGrafana, framework.GrafanaServicePatch())).To(Succeed())
 	}
 
-	Expect(framework.InstallPrometheusPushgateway(cluster, obsNamespace))
+	Expect(framework.InstallPrometheusPushgateway(cluster, obsNamespace)).To(Succeed())
 })
 
 var _ = AfterSuite(func() {
@@ -150,7 +150,7 @@ var _ = ReportAfterSuite("compile report", func(ginkgoReport Report) {
 		Expect(err).ToNot(HaveOccurred())
 
 		fileName := fmt.Sprintf("%s.json", k8s_strings.ShortenString(sanitize.Name(specReport.Description), 250))
-		Expect(os.WriteFile(path.Join(reportDir, fileName), specReportBytes, 0666)).To(Succeed())
+		Expect(os.WriteFile(path.Join(reportDir, fileName), specReportBytes, 0o666)).To(Succeed())
 	}
 })
 

@@ -88,7 +88,7 @@ var DotGenerator = GeneratorFunc(func(writer io.Writer, s ServiceGraph) error {
 	return err
 })
 
-// MermaidGenerator outputs the service graph in mermaid format (this is rendered in github flavoured Markdown).
+// MermaidGenerator outputs the service graph in mermaid format (this is rendered in github flavored Markdown).
 var MermaidGenerator = GeneratorFunc(func(writer io.Writer, s ServiceGraph) error {
 	var allEdges []string
 	for _, srv := range s.Services {
