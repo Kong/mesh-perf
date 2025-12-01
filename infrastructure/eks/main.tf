@@ -52,11 +52,24 @@ module "eks" {
   authentication_mode                      = "API_AND_CONFIG_MAP"
   enable_cluster_creator_admin_permissions = true
 
-  # On local environments, the user credentials are already configured automatically, so we don’t need to set them again.
+  # On local environments, the user credentials are already configured automatically, so we don't need to set them again.
   # This configuration is only necessary on CI to grant access to the cluster from our CI role/account.
   access_entries = local.ci ? {
     poweruser = {
       principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/poweruser"
+
+      policy_associations = {
+        cluster_admin = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = {
+            type       = "cluster"
+            namespaces = []
+          }
+        }
+      }
+    }
+    mesh_perf_ci = {
+      principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/mesh-perf-ci"
 
       policy_associations = {
         cluster_admin = {
