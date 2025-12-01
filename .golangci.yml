@@ -1,0 +1,96 @@
+---
+version: '2'
+run:
+  modules-download-mode: readonly
+linters:
+  enable:
+    - bodyclose
+    - contextcheck
+    - depguard
+    - ginkgolinter
+    - gocritic
+    - gomodguard
+    - gosec
+    - importas
+    - loggercheck
+    - misspell
+    - nonamedreturns
+    - nosprintfhostport
+    - unconvert
+    - unparam
+    - whitespace
+  settings:
+    depguard:
+      rules:
+        pkg-import:
+          list-mode: lax # only disallow some imports
+          deny:
+            - pkg: github.com/go-errors/errors
+              desc: use github.com/pkg/errors
+    gocritic:
+      disabled-checks:
+        - singleCaseSwitch
+    gomodguard:
+      blocked:
+        modules:
+          - github.com/go-errors/errors:
+              recommendations:
+                - github.com/pkg/errors
+          - github.com/ghodss/yaml:
+              recommendations:
+                - sigs.k8s.io/yaml
+          - github.com/hashicorp/multierror:
+              recommendations:
+                - errors
+          - gopkg.in/yaml.v2:
+              recommendations:
+                - sigs.k8s.io/yaml
+          - gopkg.in/yaml.v3:
+              recommendations:
+                - sigs.k8s.io/yaml
+          - io/ioutil:
+              recommendations:
+                - io
+                - os
+    misspell:
+      locale: US
+    nonamedreturns:
+      report-error-in-defer: false
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - gosec
+        text: Expect WriteFile permissions to be 0600 or less # required only for tests
+      - linters:
+          - gosec
+        text: "G404: Use of weak random number generator" # math/rand is appropriate for test data generation with reproducible seeds
+      - linters:
+          - gosec
+        text: "G115: integer overflow conversion" # conversions are safe in bounded contexts (port numbers, replica counts)
+    paths:
+      - (^|/)vendored($|/)
+issues:
+  fix: true
+formatters:
+  enable:
+    - gci
+    - gofumpt
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/kumahq/kuma/v2)
+        - prefix(github.com/kong/mink-charts)
+        - prefix(github.com/kong/mesh-perf)
+      custom-order: true
+  exclusions:
+    generated: lax
+    paths:
+      - (^|/)vendored($|/)

@@ -49,7 +49,6 @@ func SimpleFormatters(baseName string) Formatters {
 			return fmt.Sprintf("http://%s-%03d:%d", baseName, idx, port)
 		},
 	}
-
 }
 
 type Option interface {
@@ -158,7 +157,6 @@ func commonSetup(ns string) CommonSetupFn {
 			ns,
 		}, nil, nil
 	}
-
 }
 
 func (g generator) Apply(svc apis.Service) ([]runtime.Object, []byte, error) {

@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
           fetch-depth: 0
       - name: Detect Terraform-related changes
@@ -47,12 +47,15 @@ jobs:
           aws-region: us-west-1
       - name: Setup mise
         if: steps.filter.outputs.terraform-relevant == 'true'
-        uses: jdx/mise-action@be3be2260bc02bc3fbf94c5e2fed8b7964baf074 # v3.4.0
+        uses: jdx/mise-action@9dc7d5dd454262207dea3ab5a06a3df6afc8ff26 # v3.4.1
         env:
           GITHUB_TOKEN: ${{ github.token }}
       - name: make terraform/init
         if: steps.filter.outputs.terraform-relevant == 'true'
         run: make terraform/init
+      - name: make lint/terraform
+        if: steps.filter.outputs.terraform-relevant == 'true'
+        run: make lint/terraform
       - name: make terraform/validate
         if: steps.filter.outputs.terraform-relevant == 'true'
         run: make terraform/validate

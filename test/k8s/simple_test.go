@@ -12,12 +12,12 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	mesh "github.com/kumahq/kuma/api/mesh/v1alpha1"
-	"github.com/kumahq/kuma/pkg/config/core"
-	"github.com/kumahq/kuma/pkg/test/resources/builders"
-	. "github.com/kumahq/kuma/test/framework"
-	"github.com/kumahq/kuma/test/framework/envoy_admin"
-	"github.com/kumahq/kuma/test/framework/envoy_admin/tunnel"
+	mesh "github.com/kumahq/kuma/v2/api/mesh/v1alpha1"
+	"github.com/kumahq/kuma/v2/pkg/config/core"
+	"github.com/kumahq/kuma/v2/pkg/test/resources/builders"
+	. "github.com/kumahq/kuma/v2/test/framework"
+	"github.com/kumahq/kuma/v2/test/framework/envoy_admin"
+	"github.com/kumahq/kuma/v2/test/framework/envoy_admin/tunnel"
 
 	graph_apis "github.com/kong/mesh-perf/pkg/graph/apis"
 	graph_k8s "github.com/kong/mesh-perf/pkg/graph/generators/k8s"
@@ -238,7 +238,9 @@ spec:
 			)[0]
 			tnl := k8s.NewTunnel(cluster.GetKubectlOptions(TestNamespace), k8s.ResourceTypePod, pod.Name, 0, 9901)
 			Expect(tnl.ForwardPortE(cluster.GetTesting())).To(Succeed())
-			admin = tunnel.NewK8sEnvoyAdminTunnel(cluster.GetTesting(), tnl.Endpoint())
+			var err error
+			admin, err = tunnel.NewK8sEnvoyAdminTunnel(cluster.GetTesting(), tnl.Endpoint())
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		scale := func(replicas int) {
@@ -273,15 +275,52 @@ spec:
 
 	It("should distribute certs when mTLS is enabled", func() {
 		expectedCerts := suiteNumServices * suiteNumInstances
-		Expect(cluster.Install(
-			YamlK8s(builders.
-				Mesh().
-				WithMeshServicesEnabled(mesh.Mesh_MeshServices_Exclusive).
-				WithBuiltinMTLSBackend("ca-2").
-				WithEnabledMTLSBackend("ca-2").
-				WithoutInitialPolicies().
-				KubeYaml(),
-			))).To(Succeed())
+		// Step 1: Add ca-2 backend while keeping ca-1 enabled
+		Expect(cluster.Install(YamlK8s(`
+apiVersion: kuma.io/v1alpha1
+kind: Mesh
+metadata:
+  name: default
+spec:
+  meshServices:
+    mode: Exclusive
+  mtls:
+    enabledBackend: ca-1
+    backends:
+    - name: ca-1
+      type: builtin
+    - name: ca-2
+      type: builtin
+`))).To(Succeed())
+
+		// Step 2: Wait for all DPs to support ca-2
+		Eventually(func(g Gomega) {
+			out, err := k8s.RunKubectlAndGetOutputE(
+				cluster.GetTesting(),
+				cluster.GetKubectlOptions(),
+				"get", "meshinsights", "default", "-ojsonpath='{.spec.mTLS.supportedBackends.ca-2.online}'",
+			)
+			g.Expect(err).ToNot(HaveOccurred())
+			g.Expect(out).To(Equal(fmt.Sprintf("'%d'", expectedCerts)))
+		}, "600s", "5s").Should(Succeed())
+
+		// Step 3: Now switch to ca-2
+		Expect(cluster.Install(YamlK8s(`
+apiVersion: kuma.io/v1alpha1
+kind: Mesh
+metadata:
+  name: default
+spec:
+  meshServices:
+    mode: Exclusive
+  mtls:
+    enabledBackend: ca-2
+    backends:
+    - name: ca-1
+      type: builtin
+    - name: ca-2
+      type: builtin
+`))).To(Succeed())
 
 		propagationStart := time.Now()
 		Eventually(func(g Gomega) {
