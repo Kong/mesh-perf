@@ -6,7 +6,7 @@ require (
 	github.com/DataDog/datadog-api-client-go/v2 v2.50.0
 	github.com/gruntwork-io/terratest v0.53.0
 	github.com/kennygrant/sanitize v1.2.4
-	github.com/kumahq/kuma/v2 v2.0.0-20251121172448-1b0d689df1fc
+	github.com/kumahq/kuma/v2 v2.12.5
 	github.com/onsi/ginkgo/v2 v2.27.2
 	github.com/onsi/gomega v1.38.2
 	github.com/prometheus/client_golang v1.23.2
